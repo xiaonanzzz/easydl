@@ -2,6 +2,8 @@ import torch.nn as nn
 from torchvision import transforms
 from torchvision.models import resnet18
 from torch.nn import functional as F
+from easydl.utils import ImageModelWrapper
+import torch
 
 COMMON_IMAGE_PREPROCESSING_FOR_TRAINING = transforms.Compose([
     transforms.Resize(256), 
@@ -11,9 +13,9 @@ COMMON_IMAGE_PREPROCESSING_FOR_TRAINING = transforms.Compose([
     ])
 
 COMMON_IMAGE_PREPROCESSING_FOR_TESTING = transforms.Compose([
+    transforms.ToTensor(),
     transforms.Resize(256), 
     transforms.CenterCrop(224), 
-    transforms.ToTensor(), 
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     ])
 
@@ -35,4 +37,10 @@ class Resnet18MetricModel(nn.Module):
         x = self.backbone(x)
         x = self.embedding(x)
         return F.normalize(x, p=2, dim=1)
-    
+
+def create_resnet18_image2vector_wrapper(embedding_dim, model_param_path=None):
+    # a wrapper that takes an image and returns a vector
+    model = Resnet18MetricModel(embedding_dim)
+    if model_param_path:
+        model.load_state_dict(torch.load(model_param_path))
+    return ImageModelWrapper(model, COMMON_IMAGE_PREPROCESSING_FOR_TESTING)
