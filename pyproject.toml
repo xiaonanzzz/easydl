@@ -1,0 +1,60 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "easydl"
+version = "0.1.0"
+description = "A Python package for easy deep learning"
+readme = "README.md"
+authors = [
+    {name = "Xiaonan Zhao", email = "zhaoxxn@gmail.com"}
+]
+license = {text = "MIT"}
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+]
+requires-python = ">=3.7"
+dependencies = [
+    "numpy>=1.19.0",
+    "torch>=1.7.0",
+    "scikit-learn>=1.0.0",
+    "pandas>=1.3.0",
+    "pillow>=8.0.0",
+    "transformers>=4.0.0",
+]
+
+[project.optional-dependencies]
+# Development tools
+dev = [
+    "pytest>=6.0.0",
+    "black>=22.0.0",
+    "isort>=5.0.0",
+    "mypy>=0.900",
+]
+
+# All features combined
+all = [
+    "easydl[transformers]",
+    "easydl[dev]",
+]
+
+[project.urls]
+Homepage = "https://github.com/xiaonanzzz/easydl"
+
+[tool.black]
+line-length = 88
+target-version = ['py37', 'py38', 'py39', 'py310']
+include = '\.pyi?$'
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3 
