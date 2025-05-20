@@ -2,7 +2,7 @@ from tqdm import tqdm
 from easydl.utils import smart_print
 import torch
 from easydl.dml.pytorch_models import Resnet18MetricModel
-from easydl.dml.losses import ProxyAnchorLoss
+from easydl.dml.loss import ProxyAnchorLoss
 from easydl.data import GenericPytorchDataset, CommonImageToDlTensorForTraining
 from torch.utils.data import DataLoader
 from torch.optim import Adam
