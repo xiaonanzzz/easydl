@@ -1,7 +1,7 @@
 from tqdm import tqdm
 from easydl.utils import smart_print
 import torch
-
+from easydl.config import CommonCallbackConfig
 """
 This file contains training algorithms for training a model, in most of the algorithms, we use normalized names for data processing.
 Such as, 'x' for input image tensor and 'y' for label tensor. 
@@ -19,7 +19,8 @@ def default_epoch_end_callback(state_cache):
     model = state_cache['model']
     epoch = state_cache['epoch']
     if epoch <= 999:
-        torch.save(model.state_dict(), f'model_epoch_{epoch:03d}.pth')
+        if epoch % CommonCallbackConfig.save_model_every_n_epochs == 0 or epoch == 1:
+            torch.save(model.state_dict(), f'model_epoch_{epoch:03d}.pth')
     else:
         torch.save(model.state_dict(), f'model_epoch_{epoch}.pth')
 
