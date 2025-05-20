@@ -2,7 +2,7 @@ import pytest
 import pandas as pd
 from easydl.dml.evaluation import evaluate_major_cluster_precision_recall
 import numpy as np
-from easydl.dml.evaluation import evaluate_embedding_top1_accuracy
+from easydl.dml.evaluation import evaluate_embedding_top1_accuracy_ignore_self
 
 def test_evaluate_major_cluster_precision_recall():
     # Create a sample DataFrame with known cluster IDs and labels
@@ -78,10 +78,10 @@ def test_evaluate_embedding_top1_accuracy():
     df = pd.DataFrame(data)
     
     # Calculate accuracy
-    accuracy = evaluate_embedding_top1_accuracy(df)
+    result = evaluate_embedding_top1_accuracy_ignore_self(df)
     
     # Since points are well-separated, we expect perfect accuracy
-    assert accuracy == 1.0
+    assert result['avg_top1_accuracy'] == 1.0
 
 def test_evaluate_embedding_top1_accuracy_overlapping():
     # Create sample embeddings with some overlap between classes
@@ -99,22 +99,22 @@ def test_evaluate_embedding_top1_accuracy_overlapping():
     df = pd.DataFrame(data)
     
     # Calculate accuracy
-    accuracy = evaluate_embedding_top1_accuracy(df)
+    result = evaluate_embedding_top1_accuracy_ignore_self(df)
     
     # We expect less than perfect accuracy due to the overlapping point
-    assert accuracy < 1.0
-    assert accuracy >= 0.0
+    assert result['avg_top1_accuracy'] < 1.0
+    assert result['avg_top1_accuracy'] >= 0.0
 
 def test_evaluate_embedding_top1_accuracy_empty():
     # Test with empty DataFrame
     df = pd.DataFrame(columns=['embedding', 'label'])
     
     with pytest.raises(AssertionError):
-        evaluate_embedding_top1_accuracy(df)
+        evaluate_embedding_top1_accuracy_ignore_self(df)
 
 def test_evaluate_embedding_top1_accuracy_missing_columns():
     # Test with missing required columns
     df = pd.DataFrame({'wrong_column': [1, 2, 3]})
     
     with pytest.raises(AssertionError):
-        evaluate_embedding_top1_accuracy(df) 
+        evaluate_embedding_top1_accuracy_ignore_self(df) 
