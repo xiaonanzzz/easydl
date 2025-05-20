@@ -49,6 +49,12 @@ def smart_read_image(image_str: str, auto_retry=0) -> Image.Image:
         image = Image.open(image_str.split('file://')[1])
     elif image_str.startswith('base64://'):
         image = Image.open(io.BytesIO(base64.b64decode(image_str.split('base64://')[1])))
+    elif image_str.startswith('s3://'):
+        import boto3
+        s3 = boto3.client('s3')
+        bucket_name = image_str.split('s3://')[1].split('/')[0]
+        object_key = '/'.join(image_str.split('s3://')[1].split('/')[1:])
+        image = Image.open(io.BytesIO(s3.get_object(Bucket=bucket_name, Key=object_key)['Body'].read()))
     else:
         # default to be a file path
         image = Image.open(image_str)
