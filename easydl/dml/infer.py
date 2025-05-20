@@ -1,4 +1,5 @@
-from easydl.utils import smart_read_image, ImageModelWrapper
+from easydl.image import smart_read_image
+from easydl.model_wrapper import ImageModelWrapper
 import numpy as np
 
 

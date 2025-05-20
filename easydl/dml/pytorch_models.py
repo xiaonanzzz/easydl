@@ -1,23 +1,10 @@
 import torch.nn as nn
-from torchvision import transforms
 from torchvision.models import resnet18
 from torch.nn import functional as F
-from easydl.utils import ImageModelWrapper
+from easydl.model_wrapper import ImageModelWrapper
 import torch
+from easydl.image import COMMON_IMAGE_PREPROCESSING_FOR_TESTING, COMMON_IMAGE_PREPROCESSING_FOR_TRAINING
 
-COMMON_IMAGE_PREPROCESSING_FOR_TRAINING = transforms.Compose([
-    transforms.Resize(256), 
-    transforms.RandomCrop(224), 
-    transforms.ToTensor(), 
-    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-    ])
-
-COMMON_IMAGE_PREPROCESSING_FOR_TESTING = transforms.Compose([
-    transforms.ToTensor(),
-    transforms.Resize(256), 
-    transforms.CenterCrop(224), 
-    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-    ])
 
 class Resnet18MetricModel(nn.Module):
     """
