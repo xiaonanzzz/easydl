@@ -1,6 +1,8 @@
 import pytest
 import pandas as pd
 from easydl.dml.evaluation import evaluate_major_cluster_precision_recall
+import numpy as np
+from easydl.dml.evaluation import evaluate_embedding_top1_accuracy
 
 def test_evaluate_major_cluster_precision_recall():
     # Create a sample DataFrame with known cluster IDs and labels
@@ -58,3 +60,61 @@ def test_evaluate_major_cluster_precision_recall_single_cluster():
     assert result['fn'] == 0
     assert result['precision'] == 1.0
     assert result['recall'] == 1.0 
+
+def test_evaluate_embedding_top1_accuracy():
+    # Create sample embeddings and labels
+    # We'll create 4 points in 2D space, with 2 points close to each other for each class
+    embeddings = [
+        [0.0, 0.0],  # Class A
+        [0.1, 0.1],  # Class A
+        [1.0, 1.0],  # Class B
+        [1.1, 1.1],  # Class B
+    ]
+    
+    data = {
+        'embedding': embeddings,
+        'label': ['A', 'A', 'B', 'B']
+    }
+    df = pd.DataFrame(data)
+    
+    # Calculate accuracy
+    accuracy = evaluate_embedding_top1_accuracy(df)
+    
+    # Since points are well-separated, we expect perfect accuracy
+    assert accuracy == 1.0
+
+def test_evaluate_embedding_top1_accuracy_overlapping():
+    # Create sample embeddings with some overlap between classes
+    embeddings = [
+        [0.0, 0.0],  # Class A
+        [0.2, 0.2],  # Class A
+        [0.2, 0.2],  # Class B (close to Class A)
+        [1.0, 1.0],  # Class B
+    ]
+    
+    data = {
+        'embedding': embeddings,
+        'label': ['A', 'A', 'B', 'B']
+    }
+    df = pd.DataFrame(data)
+    
+    # Calculate accuracy
+    accuracy = evaluate_embedding_top1_accuracy(df)
+    
+    # We expect less than perfect accuracy due to the overlapping point
+    assert accuracy < 1.0
+    assert accuracy >= 0.0
+
+def test_evaluate_embedding_top1_accuracy_empty():
+    # Test with empty DataFrame
+    df = pd.DataFrame(columns=['embedding', 'label'])
+    
+    with pytest.raises(AssertionError):
+        evaluate_embedding_top1_accuracy(df)
+
+def test_evaluate_embedding_top1_accuracy_missing_columns():
+    # Test with missing required columns
+    df = pd.DataFrame({'wrong_column': [1, 2, 3]})
+    
+    with pytest.raises(AssertionError):
+        evaluate_embedding_top1_accuracy(df) 
