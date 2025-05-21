@@ -31,7 +31,7 @@ To set up the development environment:
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/easydl.git
+git clone https://github.com/xiaonanzzz/easydl.git
 cd easydl
 ```
 
