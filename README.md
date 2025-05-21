@@ -7,7 +7,7 @@ A Python package for easy deep learning.
 You can install the package using pip:
 
 ```bash
-pip install easydl
+pip install git+https://github.com/xiaonanzzz/easydl.git
 ```
 
 ## Features
