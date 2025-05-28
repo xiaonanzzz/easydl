@@ -1,10 +1,10 @@
 from tqdm import tqdm
 from easydl.utils import smart_print
 import torch
-from easydl.dml.pytorch_models import Resnet18MetricModel
+from easydl.dml.pytorch_models import Resnet18MetricModel, EfficientNetMetricModel
 from easydl.dml.loss import ProxyAnchorLoss
 from easydl.data import GenericPytorchDataset
-from easydl.image import CommonImageToDlTensorForTraining
+from easydl.image import CommonImageToDlTensorForTraining, ImageToDlTensor
 from torch.utils.data import DataLoader
 from torch.optim import Adam
 from easydl.common_trainer import train_xy_model_for_epochs
@@ -34,23 +34,24 @@ def train_deep_metric_learning_image_model_ver777(model_name='resnet18', train_d
     if device is None:
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    assert model_name in ['resnet18'], f"Model {model_name} is not supported"
-    assert loss_name in ['proxy_anchor_loss'], f"Loss {loss_name} is not supported"
-
     assert train_df is not None, "train_df is required"
     assert 'x' in train_df.columns and 'y' in train_df.columns, "train_df must contain 'x' and 'y' columns, and x is the path to the image"
-
-    transform = CommonImageToDlTensorForTraining()
-    dataset = GenericPytorchDataset(train_df[['x', 'y']], transforms={'x': lambda x: transform(x)})
-    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
-
-    num_classes = len(train_df['y'].unique())
 
     # Model and Loss
     if model_name == 'resnet18':
         model = Resnet18MetricModel(embedding_dim)
+        transform = CommonImageToDlTensorForTraining()
+    elif model_name == 'efficientnet_b4':
+        model = EfficientNetMetricModel(model_name='EfficientNet_B4', embedding_dim=embedding_dim)
+        image_transform = model.get_image_transform_function()
+        transform = ImageToDlTensor(image_transform)
     else:
         raise ValueError(f"Model {model_name} is not supported")
+
+    dataset = GenericPytorchDataset(train_df[['x', 'y']], transforms={'x': lambda x: transform(x)})
+    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+
+    num_classes = len(train_df['y'].unique())
     
     if loss_name == 'proxy_anchor_loss':
         loss_fn = ProxyAnchorLoss(num_classes=num_classes, embedding_dim=embedding_dim)
