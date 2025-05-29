@@ -10,8 +10,9 @@ from easydl.utils import smart_torch_to_numpy
 class EfficientNetMetricModel(nn.Module):
     """
     A wrapper for a pytorch pretrained model that returns a normalized embedding vector for each input image.
+    Link to all available models: https://docs.pytorch.org/vision/main/models.html
     """
-    def __init__(self, model_name="efficientnet_b4", embedding_dim=128, weights_suffix="IMAGENET1K_V1"):
+    def __init__(self, model_name="EfficientNet_B4", embedding_dim=128, weights_suffix="IMAGENET1K_V1"):
         super().__init__()
 
         self.model_name = model_name
@@ -68,3 +69,11 @@ def create_resnet18_image2vector_wrapper(embedding_dim, model_param_path=None):
     if model_param_path:
         model.load_state_dict(torch.load(model_param_path))
     return ImageModelWrapper(model, COMMON_IMAGE_PREPROCESSING_FOR_TESTING)
+
+def create_efficientnet_image2vector_wrapper(model_name, embedding_dim, model_param_path=None, weights_suffix="IMAGENET1K_V1"):
+    # other options see: https://docs.pytorch.org/vision/main/models.html
+    image_model = EfficientNetMetricModel(model_name=model_name, embedding_dim=embedding_dim, weights_suffix=weights_suffix)
+    if model_param_path:
+        image_model.load_state_dict(torch.load(model_param_path, map_location=torch.device('cpu')))
+    image_model = ImageModelWrapper(image_model, image_model.image_transform)
+    return image_model
