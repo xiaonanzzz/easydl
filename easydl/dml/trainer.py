@@ -38,14 +38,17 @@ def train_deep_metric_learning_image_model_ver777(model_name='resnet18', train_d
     assert 'x' in train_df.columns and 'y' in train_df.columns, "train_df must contain 'x' and 'y' columns, and x is the path to the image"
 
     # Model and Loss
+    model, transform = None, None
     if model_name == 'resnet18':
         model = Resnet18MetricModel(embedding_dim)
         transform = CommonImageToDlTensorForTraining()
-    elif model_name == 'efficientnet_b4':
-        model = EfficientNetMetricModel(model_name='EfficientNet_B4', embedding_dim=embedding_dim)
-        image_transform = model.get_image_transform_function()
-        transform = ImageToDlTensor(image_transform)
-    else:
+        
+    if model_name.lower().startswith('efficientnet_b'):
+        model_name = EfficientNetMetricModel.try_get_valid_model_name(model_name)
+        model = EfficientNetMetricModel(model_name=model_name, embedding_dim=embedding_dim)
+        transform = ImageToDlTensor(model.image_transform)
+    
+    if model is None:
         raise ValueError(f"Model {model_name} is not supported")
 
     dataset = GenericPytorchDataset(train_df[['x', 'y']], transforms={'x': lambda x: transform(x)})

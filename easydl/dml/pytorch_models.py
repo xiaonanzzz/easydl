@@ -12,8 +12,24 @@ class EfficientNetMetricModel(nn.Module):
     A wrapper for a pytorch pretrained model that returns a normalized embedding vector for each input image.
     Link to all available models: https://docs.pytorch.org/vision/main/models.html
     """
+
+    valid_model_names = {"EfficientNet_B0", "EfficientNet_B1", "EfficientNet_B2", "EfficientNet_B3", "EfficientNet_B4", "EfficientNet_B5", "EfficientNet_B6", "EfficientNet_B7"}
+    valid_weights_suffixes = {"IMAGENET1K_V1", "IMAGENET1K_V2"}
+    @staticmethod
+    def try_get_valid_model_name(model_name):
+        valid_names_lower_to_original = {name.lower(): name for name in EfficientNetMetricModel.valid_model_names}
+        model_name_query_lower = model_name.lower()
+        if model_name_query_lower not in valid_names_lower_to_original:
+            raise ValueError(f"Invalid model name: {model_name}. Valid model names are: {EfficientNetMetricModel.valid_model_names}")
+        return valid_names_lower_to_original[model_name_query_lower]
+
     def __init__(self, model_name="EfficientNet_B4", embedding_dim=128, weights_suffix="IMAGENET1K_V1"):
         super().__init__()
+
+        if model_name not in self.valid_model_names:
+            raise ValueError(f"Invalid model name: {model_name}. Valid model names are: {self.valid_model_names}")
+        if weights_suffix not in self.valid_weights_suffixes:
+            raise ValueError(f"Invalid weights suffix: {weights_suffix}. Valid weights suffixes are: {self.valid_weights_suffixes}")
 
         self.model_name = model_name
         weights_name = f"{model_name}_Weights.{weights_suffix}"
