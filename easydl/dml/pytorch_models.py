@@ -107,6 +107,7 @@ class VitMetricModel(nn.Module):
     valid_weights_suffixes = {"IMAGENET1K_V1", "IMAGENET1K_SWAG_E2E_V1", "IMAGENET1K_SWAG_LINEAR_V1"}
     @staticmethod
     def try_get_valid_model_name(model_name):
+        """ A helper function to get the valid model name from the model name. To avoid case sensitivity."""
         valid_names_lower_to_original = {name.lower(): name for name in VitMetricModel.valid_model_names}
         model_name_query_lower = model_name.lower()
         if model_name_query_lower not in valid_names_lower_to_original:

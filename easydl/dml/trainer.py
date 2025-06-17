@@ -1,7 +1,7 @@
 from tqdm import tqdm
 from easydl.utils import smart_print
 import torch
-from easydl.dml.pytorch_models import Resnet18MetricModel, EfficientNetMetricModel
+from easydl.dml.pytorch_models import Resnet18MetricModel, EfficientNetMetricModel, VitMetricModel
 from easydl.dml.loss import ProxyAnchorLoss
 from easydl.data import GenericPytorchDataset
 from easydl.image import CommonImageToDlTensorForTraining, ImageToDlTensor
@@ -15,7 +15,10 @@ Usually, 'x' is a tensor of shape (batch_size, 3, 224, 224) and 'y' is a tensor 
 
 """
 
-def train_deep_metric_learning_image_model_ver777(model_name='resnet18', train_df=None, loss_name='proxy_anchor_loss', embedding_dim=128, batch_size=256, device=None, num_epochs=100):
+def train_deep_metric_learning_image_model_ver777(model_name='resnet18', train_df=None, 
+loss_name='proxy_anchor_loss', embedding_dim=128, batch_size=256, device=None, num_epochs=100,
+default_model_weights_suffix='IMAGENET1K_V1',
+model_param_path=None):
     """
     config_dict is a dictionary that contains the configuration of the training process.
     It should contain the following keys:
@@ -28,7 +31,7 @@ def train_deep_metric_learning_image_model_ver777(model_name='resnet18', train_d
         - batch_size: the batch size
         - device: the device to train the model on
         - num_epochs: the number of epochs to train the model
-
+        - model_param_path: the path to the model parameters, if provided, the model will be loaded from the path
     The output model file will be saved in the current working directory, with the name 'model_epoch_{epoch}.pth'
     """
     if device is None:
@@ -46,6 +49,11 @@ def train_deep_metric_learning_image_model_ver777(model_name='resnet18', train_d
     if model_name.lower().startswith('efficientnet_b'):
         model_name = EfficientNetMetricModel.try_get_valid_model_name(model_name)
         model = EfficientNetMetricModel(model_name=model_name, embedding_dim=embedding_dim)
+        transform = ImageToDlTensor(model.image_transform)
+
+    if model_name.lower().startswith('vit_'):
+        model_name = VitMetricModel.try_get_valid_model_name(model_name)
+        model = VitMetricModel(model_name=model_name, embedding_dim=embedding_dim, weights_suffix=default_model_weights_suffix)
         transform = ImageToDlTensor(model.image_transform)
     
     if model is None:
