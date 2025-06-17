@@ -22,6 +22,7 @@ class ImageModelWrapper:
         x = x.unsqueeze(0)
         assert x.ndim == 4, f"ndim should be 4, but got {x.ndim}, x.shape: {x.shape}"
         
+        # assuming the model is a torch tensor to tensor model
         self.image_tensor_model.eval()
         with torch.no_grad():
             output = self.image_tensor_model(x)

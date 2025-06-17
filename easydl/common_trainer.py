@@ -16,6 +16,7 @@ Examples:
 
 def default_epoch_end_callback(state_cache):
     # save the model at the end of each epoch
+    # example name is model_epoch_000.pth, model_epoch_001.pth, ...
     model = state_cache['model']
     epoch = state_cache['epoch']
     if epoch <= 999:

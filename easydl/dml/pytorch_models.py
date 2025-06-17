@@ -6,6 +6,7 @@ import torch
 from easydl.image import COMMON_IMAGE_PREPROCESSING_FOR_TESTING, COMMON_IMAGE_PREPROCESSING_FOR_TRAINING
 from PIL import Image
 from easydl.utils import smart_torch_to_numpy
+from easydl.image import smart_read_image
 
 class EfficientNetMetricModel(nn.Module):
     """
@@ -93,3 +94,69 @@ def create_efficientnet_image2vector_wrapper(model_name, embedding_dim, model_pa
         image_model.load_state_dict(torch.load(model_param_path, map_location=torch.device('cpu')))
     image_model = ImageModelWrapper(image_model, image_model.image_transform)
     return image_model
+
+
+
+class VitMetricModel(nn.Module):
+    """
+    A wrapper for a pytorch pretrained model that returns a normalized embedding vector for each input image.
+    Link to all available models: https://docs.pytorch.org/vision/main/models.html
+    """
+
+    valid_model_names = {"ViT_B_16", "ViT_B_32", "ViT_L_16", "ViT_L_32", "ViT_H_14"}
+    valid_weights_suffixes = {"IMAGENET1K_V1", "IMAGENET1K_SWAG_E2E_V1", "IMAGENET1K_SWAG_LINEAR_V1"}
+    @staticmethod
+    def try_get_valid_model_name(model_name):
+        valid_names_lower_to_original = {name.lower(): name for name in VitMetricModel.valid_model_names}
+        model_name_query_lower = model_name.lower()
+        if model_name_query_lower not in valid_names_lower_to_original:
+            raise ValueError(f"Invalid model name: {model_name}. Valid model names are: {VitMetricModel.valid_model_names}")
+        return valid_names_lower_to_original[model_name_query_lower]
+
+    def __init__(self, model_name="ViT_B_16", embedding_dim=128, weights_suffix="IMAGENET1K_SWAG_E2E_V1"):
+        super().__init__()
+
+        if model_name not in self.valid_model_names:
+            raise ValueError(f"Invalid model name: {model_name}. Valid model names are: {self.valid_model_names}")
+        if weights_suffix not in self.valid_weights_suffixes:
+            raise ValueError(f"Invalid weights suffix: {weights_suffix}. Valid weights suffixes are: {self.valid_weights_suffixes}")
+
+        self.model_name = model_name
+        weights_name = f"{model_name}_Weights.{weights_suffix}"
+        model = get_model(model_name, weights=weights_name)
+        
+        in_feature_dim = model.heads.head.in_features
+        model.heads.head = nn.Linear(in_feature_dim, embedding_dim)
+        weights = get_weight(weights_name)
+        self.image_transform = weights.transforms()
+        self.backbone = model
+
+    def get_in_feature_dim(self):
+        return self.backbone.heads.head.in_features
+
+    def get_image_transform_function(self):
+        return self.image_transform
+
+    def forward(self, x):
+        # expecting 4d tensor, (batch_size, 3, 224, 224)
+        x = self.backbone(x)
+        return F.normalize(x, p=2, dim=1)
+    
+    def embed_image(self, image: Image.Image):
+        # expecing an PIL image input
+        self.eval()
+        with torch.no_grad():
+            image_t = self.image_transform(image)
+            image_t = image_t.unsqueeze(0)
+            embedding = self.forward(image_t)
+            embedding = embedding.squeeze(0)
+            return smart_torch_to_numpy(embedding)
+        
+    def embed_images(self, images):
+        self.eval()
+        with torch.no_grad():
+            images_t = [self.image_transform(smart_read_image(image)) for image in images]
+            images_t = torch.stack(images_t)
+            embeddings = self.forward(images_t)
+            return smart_torch_to_numpy(embeddings)
+
