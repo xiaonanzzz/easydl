@@ -2,6 +2,8 @@ from tqdm import tqdm
 from easydl.utils import smart_print
 import torch
 from easydl.config import CommonCallbackConfig
+from easydl.utils import AcceleratorSetting
+
 """
 This file contains training algorithms for training a model, in most of the algorithms, we use normalized names for data processing.
 Such as, 'x' for input image tensor and 'y' for label tensor. 
@@ -34,21 +36,28 @@ def train_xy_model_for_epochs(model, dataloader, optimizer, loss_fn, device, num
 
     state_cache = {}
 
-    model.to(device)
-    loss_fn.to(device)
+    if not AcceleratorSetting.using_accelerator:
+        model.to(device)
+        loss_fn.to(device)
 
     for epoch in range(1, num_epochs + 1):
         model.train()
         total_loss = 0.0
         # batch_idx starts from 0
         for batch_idx, data in tqdm(enumerate(dataloader), desc=f"Epoch {epoch}/{num_epochs}", total=len(dataloader)):
-            images, labels = data['x'].to(device), data['y'].to(device)
+            if not AcceleratorSetting.using_accelerator:
+                images, labels = data['x'].to(device), data['y'].to(device)
+            else:
+                images, labels = data['x'], data['y']
 
             embeddings = model(images)
             loss = loss_fn(embeddings, labels)
 
             optimizer.zero_grad()
-            loss.backward()
+            if not AcceleratorSetting.using_accelerator:
+                loss.backward()
+            else:
+                AcceleratorSetting.accelerator.backward(loss)
             optimizer.step()
 
             total_loss += loss.item()

@@ -5,6 +5,19 @@ import torch
 import numpy as np
 from easydl.config import *
 
+class AcceleratorSetting:
+    device = None
+    using_accelerator = False
+    accelerator = None
+
+    @staticmethod
+    def init():
+        from accelerate import Accelerator
+        AcceleratorSetting.accelerator = Accelerator()
+        AcceleratorSetting.device = AcceleratorSetting.accelerator.device
+        AcceleratorSetting.using_accelerator = True
+
+    
 def set_seed(seed: int) -> None:
     """Set random seed for reproducibility.
     
@@ -55,3 +68,4 @@ def smart_print(*messages: str):
     if SmartPrintConfig.log_file:
         with open(SmartPrintConfig.log_file, 'a') as f:
             print(*messages, file=f)
+
