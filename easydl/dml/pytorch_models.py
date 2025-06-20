@@ -113,6 +113,14 @@ class VitMetricModel(nn.Module):
         if model_name_query_lower not in valid_names_lower_to_original:
             raise ValueError(f"Invalid model name: {model_name}. Valid model names are: {VitMetricModel.valid_model_names}")
         return valid_names_lower_to_original[model_name_query_lower]
+    
+    @staticmethod
+    def create_image2vector_wrapper(model_name, embedding_dim, model_param_path=None):
+        image_model = VitMetricModel(model_name=model_name, embedding_dim=embedding_dim, weights_suffix="IMAGENET1K_V1")
+        if model_param_path:
+            image_model.load_state_dict(torch.load(model_param_path, map_location=torch.device('cpu')))
+        image_model = ImageModelWrapper(image_model, image_model.image_transform)
+        return image_model
 
     def __init__(self, model_name="ViT_B_16", embedding_dim=128, weights_suffix="IMAGENET1K_SWAG_E2E_V1"):
         super().__init__()
