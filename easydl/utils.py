@@ -69,3 +69,12 @@ def smart_print(*messages: str):
         with open(SmartPrintConfig.log_file, 'a') as f:
             print(*messages, file=f)
 
+def torch_load_with_prefix_removal(model_param_path):
+    model_param = torch.load(model_param_path, map_location=torch.device('cpu'))
+    new_model_param = {}
+    for k, v in model_param.items():
+        if k.startswith('module.'):
+            new_model_param[k.replace('module.', '')] = v
+        else:
+            new_model_param[k] = v
+    return new_model_param

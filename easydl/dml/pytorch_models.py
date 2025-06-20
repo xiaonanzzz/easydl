@@ -5,7 +5,7 @@ from easydl.model_wrapper import ImageModelWrapper
 import torch
 from easydl.image import COMMON_IMAGE_PREPROCESSING_FOR_TESTING, COMMON_IMAGE_PREPROCESSING_FOR_TRAINING
 from PIL import Image
-from easydl.utils import smart_torch_to_numpy
+from easydl.utils import smart_torch_to_numpy, torch_load_with_prefix_removal
 from easydl.image import smart_read_image
 
 class EfficientNetMetricModel(nn.Module):
@@ -118,7 +118,13 @@ class VitMetricModel(nn.Module):
     def create_image2vector_wrapper(model_name, embedding_dim, model_param_path=None):
         image_model = VitMetricModel(model_name=model_name, embedding_dim=embedding_dim, weights_suffix="IMAGENET1K_V1")
         if model_param_path:
-            image_model.load_state_dict(torch.load(model_param_path, map_location=torch.device('cpu')))
+            try:
+                image_model.load_state_dict(torch.load(model_param_path, map_location=torch.device('cpu')))
+            except Exception as e:
+                print(f"Error loading model: {e}")
+                print(f"Trying to load model from {model_param_path} with prefix removal")
+                image_model.load_state_dict(torch_load_with_prefix_removal(model_param_path))
+                print(f"Model loaded successfully")
         image_model = ImageModelWrapper(image_model, image_model.image_transform)
         return image_model
 
