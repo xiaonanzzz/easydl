@@ -72,9 +72,16 @@ def smart_print(*messages: str):
 def torch_load_with_prefix_removal(model_param_path):
     model_param = torch.load(model_param_path, map_location=torch.device('cpu'))
     new_model_param = {}
+    count_of_removed_prefix = 0
     for k, v in model_param.items():
+        # remove the prefix 'module.' which usually comes from multi-gpu training, e.g. accelerate. 
         if k.startswith('module.'):
             new_model_param[k.replace('module.', '')] = v
+            count_of_removed_prefix += 1
         else:
             new_model_param[k] = v
+    if count_of_removed_prefix > 0:
+        print(f"Removed {count_of_removed_prefix} prefix 'module.' from model parameters")
+    if count_of_removed_prefix != len(list(model_param.keys())):
+        print(f"Number of removed prefix 'module.' {count_of_removed_prefix} does not match the number of model parameters {len(list(model_param.keys()))}")
     return new_model_param

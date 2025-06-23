@@ -20,7 +20,7 @@ Usually, 'x' is a tensor of shape (batch_size, 3, 224, 224) and 'y' is a tensor 
 def train_deep_metric_learning_image_model_ver777(model_name='resnet18', train_df=None, 
 loss_name='proxy_anchor_loss', embedding_dim=128, batch_size=256, device=None, num_epochs=100,
 default_model_weights_suffix='IMAGENET1K_V1',
-model_param_path=None, use_accelerator=False):
+model_param_path=None, use_accelerator=False, lr=1e-4):
     """
     config_dict is a dictionary that contains the configuration of the training process.
     It should contain the following keys:
@@ -80,7 +80,7 @@ model_param_path=None, use_accelerator=False):
         raise ValueError(f"Loss {loss_name} is not supported")
 
     # Optimizer
-    optimizer = Adam(list(model.parameters()) + list(loss_fn.parameters()), lr=1e-4)
+    optimizer = Adam(list(model.parameters()) + list(loss_fn.parameters()), lr=lr)
 
     if AcceleratorSetting.using_accelerator:
         accelerator = AcceleratorSetting.accelerator
