@@ -64,7 +64,7 @@ def train_xy_model_for_epochs(model, dataloader, optimizer, loss_fn, device, num
 
         # save the states of the training process for call back functions
         avg_loss = total_loss / len(dataloader)
-        smart_print(f"Epoch {epoch+1}: Loss = {avg_loss:.4f}")
+        smart_print(f"Epoch {epoch}: Loss = {avg_loss:.4f}")
         state_cache['avg_loss'] = avg_loss
         state_cache['epoch'] = epoch
         state_cache['model'] = model
