@@ -62,7 +62,7 @@ class EfficientNetMetricModel(nn.Module):
 
 class Resnet18MetricModel(nn.Module):
     """
-    Resnet 18 is easy to trian and test with, thus very good for dry run or development. 
+    Resnet 18 is easy to train and test with, thus very good for dry run or development.
     
     """
     def __init__(self, embedding_dim):
