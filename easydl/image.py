@@ -62,6 +62,15 @@ def smart_read_image(image_str: str, auto_retry=0) -> Image.Image:
     image = image.convert('RGB')
     return image
 
+
+def smart_read_and_crop_image_by_box(image_str: str, box: tuple, auto_retry=0) -> Image.Image:
+    """
+    Read an image from a string, crop it by a box, and return the cropped image.
+    """
+    image = smart_read_image(image_str, auto_retry)
+    return image.crop(box)
+
+
 class ImageToDlTensor:
     def __init__(self, image_preprocessing_function):
         self.image_preprocessing_function = image_preprocessing_function
@@ -77,3 +86,4 @@ class CommonImageToDlTensorForTraining(ImageToDlTensor):
 class CommonImageToDlTensorForTesting(ImageToDlTensor):
     def __init__(self):
         super().__init__(COMMON_IMAGE_PREPROCESSING_FOR_TESTING)
+
