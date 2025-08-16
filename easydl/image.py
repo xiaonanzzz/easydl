@@ -1,5 +1,5 @@
 import requests
-from PIL import Image
+from PIL import Image, ImageOps
 import base64
 import io
 import time
@@ -47,7 +47,10 @@ class S3ImageError(ImageLoadError):
     pass
 
 
-def smart_read_image(image_str: Union[str, Image.Image], auto_retry: int = 0) -> Image.Image:
+def smart_read_image_v2(image_str: Union[str, Image.Image], **kwargs) -> Image.Image:
+    return smart_read_image(image_str, exif_transpose=True, **kwargs)
+
+def smart_read_image(image_str: Union[str, Image.Image], auto_retry: int = 0, exif_transpose: bool = False) -> Image.Image:
     """
     Read an image from various sources and convert to RGB format.
     
@@ -60,7 +63,7 @@ def smart_read_image(image_str: Union[str, Image.Image], auto_retry: int = 0) ->
             - Base64 encoded image (base64://)
             - S3 path (s3://)
         auto_retry: Number of retry attempts if loading fails (default: 0)
-    
+        exif_transpose: Whether to transpose the image according to EXIF orientation (default: True)
     Returns:
         PIL Image in RGB format
         
@@ -160,6 +163,8 @@ def smart_read_image(image_str: Union[str, Image.Image], auto_retry: int = 0) ->
                 
         # Convert to RGB format
         image = image.convert('RGB')
+        if exif_transpose:
+            image = ImageOps.exif_transpose(image)
         return image
         
     except (NetworkImageError, FileImageError, Base64ImageError, S3ImageError) as e:
