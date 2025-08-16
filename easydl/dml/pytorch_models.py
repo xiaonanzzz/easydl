@@ -6,7 +6,7 @@ import torch
 from easydl.image import COMMON_IMAGE_PREPROCESSING_FOR_TESTING, COMMON_IMAGE_PREPROCESSING_FOR_TRAINING
 from PIL import Image
 from easydl.utils import smart_torch_to_numpy, torch_load_with_prefix_removal
-from easydl.image import smart_read_image
+from easydl.image import smart_read_image, smart_read_image_v2
 
 class EfficientNetMetricModel(nn.Module):
     """
@@ -72,13 +72,58 @@ class Resnet18MetricModel(nn.Module):
         backbone = resnet18(pretrained=True)
         self.backbone = backbone
         self.embedding = nn.Linear(backbone.fc.in_features, embedding_dim)
-        self.backbone.fc = nn.Identity()    # change the last layer to identity
+        self.backbone.fc = nn.Identity()
+        
+        # Store intermediate features
+        self.intermediate_features = {}
+        self._register_hooks()
 
-    def forward(self, x):
+    def _register_hooks(self):
+        """Register hooks to capture intermediate features"""
+        def hook_fn(name):
+            def hook(module, input, output):
+                self.intermediate_features[name] = output
+            return hook
+        
+        # Hook the layer before global pooling (last conv layer)
+        self.backbone.layer4.register_forward_hook(hook_fn('pre_pooling'))
+        # Hook the post-pooling features
+        self.backbone.avgpool.register_forward_hook(hook_fn('post_pooling'))
+        # Hook the embedding layer
+        self.embedding.register_forward_hook(hook_fn('embedding'))
+
+    def forward(self, x, return_features=False):
+        self.intermediate_features.clear()
         x = self.backbone(x)
         x = self.embedding(x)
-        return F.normalize(x, p=2, dim=1)
+        final_output = F.normalize(x, p=2, dim=1)
+        
+        if return_features:
+            return final_output, self.intermediate_features
+        return final_output
     
+    def get_features(self, x):
+        """Get both intermediate and final features"""
+        final_output, features = self.forward(x, return_features=True)
+        return features
+
+    def get_features_from_image(self, image: Image.Image):
+        """
+        Returns:
+            - pre_pooling: (batch_size, 512, 7, 7)
+            - post_pooling: (batch_size, 512)
+            - embedding: (batch_size, embedding_dim)
+        """
+        image = smart_read_image_v2(image)
+        x = COMMON_IMAGE_PREPROCESSING_FOR_TESTING(image)
+        x = x.unsqueeze(0)
+        assert x.ndim == 4, f"ndim should be 4, but got {x.ndim}, x.shape: {x.shape}"
+        
+        # assuming the model is a torch tensor to tensor model
+        self.eval()
+        with torch.no_grad():
+            output = self.get_features(x)
+            return output
 
 def create_resnet18_image2vector_wrapper(embedding_dim, model_param_path=None):
     # a wrapper that takes an image and returns a vector
