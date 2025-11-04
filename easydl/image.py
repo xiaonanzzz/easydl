@@ -208,6 +208,16 @@ def smart_read_and_crop_image_by_box(image_str: Union[str, Image.Image], box: tu
     return image.crop(box)
 
 
+def smart_image_to_base64(image: Union[str, Image.Image], format: str = "png") -> str:
+    if isinstance(image, str):
+        image = smart_read_image_v2(image)
+    if isinstance(image, Image.Image):
+        image_bytes = io.BytesIO()
+        image.save(image_bytes, format=format)
+        return base64.b64encode(image_bytes.getvalue()).decode("utf-8")
+    else:
+        raise ValueError(f"Expected string or PIL.Image, got {type(image).__name__}")
+
 class ImageToDlTensor:
     def __init__(self, image_preprocessing_function):
         self.image_preprocessing_function = image_preprocessing_function
