@@ -79,7 +79,7 @@ def smart_read_image(image_str: Union[str, Image.Image], auto_retry: int = 0, ex
         last_exception = None
         for attempt in range(auto_retry):
             try:
-                return smart_read_image(image_str, 0)  # Call with no retry to avoid recursion
+                return smart_read_image(image_str, auto_retry=0, exif_transpose=exif_transpose)  # Call with no retry to avoid recursion
             except Exception as e:
                 last_exception = e
                 smart_print(f"Error reading image (attempt {attempt+1}/{auto_retry}): {e}")
