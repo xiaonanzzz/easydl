@@ -6,7 +6,9 @@ import time
 from typing import Union, Optional
 from torchvision import transforms
 from easydl.utils import smart_print
+from pillow_heif import register_heif_opener
 
+register_heif_opener()
 
 COMMON_IMAGE_PREPROCESSING_FOR_TRAINING = transforms.Compose([
     transforms.Resize(256), 
