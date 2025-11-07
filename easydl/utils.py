@@ -15,7 +15,11 @@ class AcceleratorSetting:
 
     @staticmethod
     def init():
+        """ Save to call this function multiple times """
         from accelerate import Accelerator
+        if AcceleratorSetting.accelerator is not None:
+            print("Accelerator already initialized, skipping initialization")
+            return
         AcceleratorSetting.accelerator = Accelerator()
         AcceleratorSetting.device = AcceleratorSetting.accelerator.device
         AcceleratorSetting.using_accelerator = True
