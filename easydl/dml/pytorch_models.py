@@ -132,7 +132,7 @@ def create_resnet18_image2vector_wrapper(embedding_dim, model_param_path=None):
     # a wrapper that takes an image and returns a vector
     model = Resnet18MetricModel(embedding_dim)
     if model_param_path:
-        model.load_state_dict(torch.load(model_param_path, map_location=PytorchConfig.device))
+        model.load_state_dict(torch_load_with_prefix_removal(model_param_path))
     return ImageModelWrapper(model, COMMON_IMAGE_PREPROCESSING_FOR_TESTING)
 
 def create_efficientnet_image2vector_wrapper(model_name, embedding_dim, model_param_path=None, weights_suffix="IMAGENET1K_V1"):
