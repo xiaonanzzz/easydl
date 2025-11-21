@@ -11,11 +11,37 @@ A Python package for easy deep learning.
 
 ## Installation
 
-You can install the package using pip:
+You can install the package using pip with different dependency sets depending on your needs:
 
+### Basic Installation (minimal dependencies)
 ```bash
 pip install git+https://github.com/xiaonanzzz/easydl.git
 ```
+This installs only the base package with minimal dependencies (numpy).
+
+### Core Installation (image processing utilities)
+```bash
+pip install "git+https://github.com/xiaonanzzz/easydl.git[core]"
+```
+Includes core utilities for image processing (pillow, requests, pillow-heif).
+
+### Inference Installation (for running models)
+```bash
+pip install "git+https://github.com/xiaonanzzz/easydl.git[infer]"
+```
+Includes everything needed for model inference (torch, torchvision, transformers). Automatically includes `core` dependencies.
+
+### Training Installation (for training models)
+```bash
+pip install "git+https://github.com/xiaonanzzz/easydl.git[train]"
+```
+Includes everything needed for training models (tqdm, scikit-learn, pandas, boto3). Automatically includes `infer` and `core` dependencies.
+
+### Development Installation
+```bash
+pip install -e ".[dev]"
+```
+Includes all dependencies plus development tools (pytest, black, isort, mypy).
 
 
 
