@@ -15,7 +15,7 @@ class AcceleratorSetting:
 
     @staticmethod
     def init():
-        """ Save to call this function multiple times """
+        """ Safely initialize the accelerator, to call this function multiple times is safe """
         from accelerate import Accelerator
         if AcceleratorSetting.accelerator is not None:
             print("Accelerator already initialized, skipping initialization")

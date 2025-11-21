@@ -1,7 +1,7 @@
 from tqdm import tqdm
 from easydl.utils import smart_print
 import torch
-from easydl.dml.pytorch_models import Resnet18MetricModel, EfficientNetMetricModel, VitMetricModel
+from easydl.dml.pytorch_models import Resnet18MetricModel, EfficientNetMetricModel, VitMetricModel, Resnet50MetricModel
 from easydl.dml.loss import ProxyAnchorLoss
 from easydl.data import GenericPytorchDataset
 from easydl.image import CommonImageToDlTensorForTraining, ImageToDlTensor
@@ -55,7 +55,11 @@ model_param_path=None, use_accelerator=False, lr=1e-4):
     if model_name == 'resnet18':
         model = Resnet18MetricModel(embedding_dim)
         transform = CommonImageToDlTensorForTraining()
-        
+
+    if model_name == 'resnet50':
+        model = Resnet50MetricModel(embedding_dim, weights_suffix=default_model_weights_suffix)
+        transform = CommonImageToDlTensorForTraining()
+
     if model_name.lower().startswith('efficientnet_b'):
         model_name = EfficientNetMetricModel.try_get_valid_model_name(model_name)
         model = EfficientNetMetricModel(model_name=model_name, embedding_dim=embedding_dim)

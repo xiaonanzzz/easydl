@@ -1,5 +1,5 @@
 import torch.nn as nn
-from torchvision.models import resnet18, get_model, get_weight, ResNet18_Weights
+from torchvision.models import resnet18, resnet50, get_model, get_weight, ResNet18_Weights, ResNet50_Weights
 from torch.nn import functional as F
 from easydl.model_wrapper import ImageModelWrapper
 import torch
@@ -118,6 +118,77 @@ class Resnet18MetricModel(nn.Module):
         Returns:
             - pre_pooling: (batch_size, 512, 7, 7)
             - post_pooling: (batch_size, 512)
+            - embedding: (batch_size, embedding_dim)
+        """
+        image = smart_read_image_v2(image)
+        x = COMMON_IMAGE_PREPROCESSING_FOR_TESTING(image)
+        x = x.unsqueeze(0)
+        assert x.ndim == 4, f"ndim should be 4, but got {x.ndim}, x.shape: {x.shape}"
+        
+        # assuming the model is a torch tensor to tensor model
+        self.eval()
+        with torch.no_grad():
+            output = self.get_features(x)
+            return output
+
+
+class Resnet50MetricModel(nn.Module):
+    """
+    Resnet 50 is a deeper model than ResNet 18, providing better feature extraction capabilities.
+    
+    """
+
+    valid_weights_suffixes = {"IMAGENET1K_V1", "IMAGENET1K_V2"}
+
+    def __init__(self, embedding_dim, weights_suffix="IMAGENET1K_V1"):
+        # embedding dim is the dimension of the embedding space, if it is set to 128, the output of the model will be a 128-dimensional vector for each input image. 
+
+        super().__init__()
+        assert weights_suffix in self.valid_weights_suffixes, f"Invalid weights suffix: {weights_suffix}. Valid weights suffixes are: {self.valid_weights_suffixes}"
+        weights_name = f"ResNet50_Weights.{weights_suffix}"
+        backbone = resnet50(weights=weights_name)
+        self.backbone = backbone
+        self.embedding = nn.Linear(backbone.fc.in_features, embedding_dim)
+        self.backbone.fc = nn.Identity()
+        
+        # Store intermediate features
+        self.intermediate_features = {}
+        self._register_hooks()
+
+    def _register_hooks(self):
+        """Register hooks to capture intermediate features"""
+        def hook_fn(name):
+            def hook(module, input, output):
+                self.intermediate_features[name] = output
+            return hook
+        
+        # Hook the layer before global pooling (last conv layer)
+        self.backbone.layer4.register_forward_hook(hook_fn('pre_pooling'))
+        # Hook the post-pooling features
+        self.backbone.avgpool.register_forward_hook(hook_fn('post_pooling'))
+        # Hook the embedding layer
+        self.embedding.register_forward_hook(hook_fn('embedding'))
+
+    def forward(self, x, return_features=False):
+        self.intermediate_features.clear()
+        x = self.backbone(x)
+        x = self.embedding(x)
+        final_output = F.normalize(x, p=2, dim=1)
+        
+        if return_features:
+            return final_output, self.intermediate_features
+        return final_output
+    
+    def get_features(self, x):
+        """Get both intermediate and final features"""
+        final_output, features = self.forward(x, return_features=True)
+        return features
+
+    def get_features_from_image(self, image: Image.Image):
+        """
+        Returns:
+            - pre_pooling: (batch_size, 2048, 7, 7)
+            - post_pooling: (batch_size, 2048)
             - embedding: (batch_size, embedding_dim)
         """
         image = smart_read_image_v2(image)
