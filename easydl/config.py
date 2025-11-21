@@ -60,3 +60,4 @@ class SmartPrintConfig:
 class CommonCallbackConfig:
     """static class for storing the configuration of the common callback functions"""
     save_model_every_n_epochs = 5
+    save_model_dir = '' # by default, save the model to the current working directory
