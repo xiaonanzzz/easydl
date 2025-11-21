@@ -1,5 +1,5 @@
 import torch.nn as nn
-from torchvision.models import resnet18, get_model, get_weight
+from torchvision.models import resnet18, get_model, get_weight, ResNet18_Weights
 from torch.nn import functional as F
 from easydl.model_wrapper import ImageModelWrapper
 import torch
@@ -68,11 +68,14 @@ class Resnet18MetricModel(nn.Module):
     Resnet 18 is easy to train and test with, thus very good for dry run or development.
     
     """
+
+    valid_weights_suffixes = {"IMAGENET1K_V1", "IMAGENET1K_V2"}
+
     def __init__(self, embedding_dim):
         # embedding dim is the dimension of the embedding space, if it is set to 128, the output of the model will be a 128-dimensional vector for each input image. 
 
         super().__init__()
-        backbone = resnet18(pretrained=True)
+        backbone = resnet18(weights=ResNet18_Weights.IMAGENET1K_V1)
         self.backbone = backbone
         self.embedding = nn.Linear(backbone.fc.in_features, embedding_dim)
         self.backbone.fc = nn.Identity()
