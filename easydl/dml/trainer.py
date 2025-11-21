@@ -2,7 +2,7 @@ from tqdm import tqdm
 from easydl.utils import smart_print
 import torch
 from easydl.dml.pytorch_models import Resnet18MetricModel, EfficientNetMetricModel, VitMetricModel, Resnet50MetricModel
-from easydl.dml.loss import ProxyAnchorLoss
+from easydl.dml.loss import ProxyAnchorLoss, ArcFaceLoss
 from easydl.data import GenericPytorchDataset
 from easydl.image import CommonImageToDlTensorForTraining, ImageToDlTensor
 from torch.utils.data import DataLoader
@@ -80,6 +80,8 @@ model_param_path=None, use_accelerator=False, lr=1e-4):
     
     if loss_name == 'proxy_anchor_loss':
         loss_fn = ProxyAnchorLoss(num_classes=num_classes, embedding_dim=embedding_dim)
+    elif loss_name == 'arcface_loss':
+        loss_fn = ArcFaceLoss(embedding_dim=embedding_dim, num_classes=num_classes)
     else:
         raise ValueError(f"Loss {loss_name} is not supported")
 
