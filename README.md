@@ -2,6 +2,13 @@
 
 A Python package for easy deep learning.
 
+# Design Principles
+
+* **One line P99**: P99 use cases can be done with one line of code. 
+* **Smart handling**: All possible edge cases should be handled without bothering the user of the function. 
+* **Plug-in flesible**: Any one can easily copy and paste the code and make some modifications to implement their idea.
+
+
 ## Installation
 
 You can install the package using pip:
@@ -9,6 +16,9 @@ You can install the package using pip:
 ```bash
 pip install git+https://github.com/xiaonanzzz/easydl.git
 ```
+
+
+
 
 ## Features
 
