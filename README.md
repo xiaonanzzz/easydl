@@ -4,7 +4,7 @@ A Python package for easy deep learning.
 
 # Design Principles
 
-* **One line P99**: P99 use cases can be done with one line of code. 
+* **Three lines P99**: P99 use cases can be done with less than 3 lines of code. One line for init, one line for run, one line for clean up.
 * **Smart handling**: All possible edge cases should be handled without bothering the user of the function. 
 * **Plug-in flesible**: Any one can easily copy and paste the code and make some modifications to implement their idea.
 
