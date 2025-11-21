@@ -16,6 +16,32 @@ Examples:
 """
 
 
+def safe_save_model(model, save_path):
+    """
+    Safely save a model's state dict, handling accelerator usage appropriately.
+    
+    Args:
+        model: The PyTorch model to save
+        save_path: Path where the model should be saved
+    
+    This function automatically detects if accelerator is being used and:
+    - If using accelerator: unwraps the model, gets state dict using accelerator's method,
+      and saves only from the main process in distributed settings
+    - If not using accelerator: uses standard torch.save()
+    """
+    if AcceleratorSetting.using_accelerator:
+        accelerator = AcceleratorSetting.accelerator
+        # Only save from the main process in distributed settings
+        if accelerator.is_main_process:
+            # Get state dict using accelerator's method (handles unwrapping internally)
+            state_dict = accelerator.get_state_dict(model)
+            # Use accelerator.save for better compatibility with distributed training
+            accelerator.save(state_dict, save_path)
+    else:
+        # Standard PyTorch saving when not using accelerator
+        torch.save(model.state_dict(), save_path)
+
+
 def default_epoch_end_callback(state_cache):
     # save the model at the end of each epoch
     # example name is model_epoch_000.pth, model_epoch_001.pth, ...
@@ -37,7 +63,8 @@ def default_epoch_end_callback(state_cache):
         else:
             save_path = os.path.join(CommonCallbackConfig.save_model_dir, f'model_epoch_{epoch}.pth')
         
-        torch.save(model.state_dict(), save_path)
+        # Use safe_save_model to handle accelerator usage
+        safe_save_model(model, save_path)
 
 
 def train_xy_model_for_epochs(model, dataloader, optimizer, loss_fn, device, num_epochs=10, epoch_end_callback=default_epoch_end_callback):
@@ -56,7 +83,8 @@ def train_xy_model_for_epochs(model, dataloader, optimizer, loss_fn, device, num
         model.train()
         total_loss = 0.0
         # batch_idx starts from 0
-        for batch_idx, data in tqdm(enumerate(dataloader), desc=f"Epoch {epoch}/{num_epochs}", total=len(dataloader)):
+        progress_bar = tqdm(enumerate(dataloader), desc=f"Epoch {epoch}/{num_epochs}", total=len(dataloader))
+        for batch_idx, data in progress_bar:
             if not AcceleratorSetting.using_accelerator:
                 images, labels = data['x'].to(device), data['y'].to(device)
             else:
@@ -74,6 +102,8 @@ def train_xy_model_for_epochs(model, dataloader, optimizer, loss_fn, device, num
 
             total_loss += loss.item()
 
+            # Update the tqdm progress bar with current loss
+            progress_bar.set_postfix(loss=loss.item())
         # save the states of the training process for call back functions
         avg_loss = total_loss / len(dataloader)
         smart_print(f"Epoch {epoch}: Loss = {avg_loss:.4f}")
