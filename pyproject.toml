@@ -25,31 +25,22 @@ classifiers = [
 requires-python = ">=3.7"
 dependencies = [
     "numpy>=1.19.0",
-]
-
-[project.optional-dependencies]
-# Core utilities for image processing and basic operations
-core = [
     "pillow>=8.0.0",
     "requests>=2.25.0",
     "pillow-heif>=0.10.0",
-]
-
-# Dependencies for model inference
-infer = [
-    "easydl[core]",
     "torch>=1.7.0",
     "torchvision>=0.17.2",
     "transformers>=4.0.0",
-]
-
-# Dependencies for model training
-train = [
-    "easydl[infer]",
     "tqdm>=4.60.0",
     "scikit-learn>=1.0.0",
     "pandas>=1.3.0",
     "boto3>=1.38.0",
+]
+
+[project.optional-dependencies]
+# Dependencies for research
+research = [
+    "datasets>=4.4.1",
 ]
 
 # Development tools
@@ -64,6 +55,7 @@ dev = [
 all = [
     "easydl[train]",
     "easydl[dev]",
+    "easydl[research]",
 ]
 
 [project.urls]
