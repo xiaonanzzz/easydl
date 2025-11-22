@@ -8,3 +8,6 @@ def train_main():
     x_loader = lambda i: ds['train'][i]['image']
     y_loader = lambda i: ds['train'][i]['text']
     DeepMetricLearningImageTrainverV871.train_resnet18_with_arcface_loss(x_loader, y_loader, len(ds['train']), embedding_dim=128, batch_size=256, num_epochs=10, lr=1e-4)
+
+if __name__ == "__main__":
+    train_main()

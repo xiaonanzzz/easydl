@@ -103,27 +103,32 @@ class DeepMetricLearningImageTrainverV871:
         return lambda x: df['x'][x], lambda x: df['y'][x], len(df)
 
     @staticmethod
+    def transform_y_loader_to_encoded_y_list(y_loader, size_of_dataset) -> list[int]:
+        y_list = [y_loader(i) for i in range(size_of_dataset)]
+        y_encoder = LabelEncoder()
+        y_encoder.fit(y_list)
+        encoded_y_list = y_encoder.transform(y_list)
+        assert len(encoded_y_list) == size_of_dataset, "The length of the encoded y list must be the same as the size of the dataset"
+        return encoded_y_list
+
+    @staticmethod
     def train_resnet18_with_arcface_loss(x_loader, y_loader, size_of_dataset, embedding_dim=128, batch_size=256, num_epochs=10, lr=1e-4):
         AcceleratorSetting.init()   
         
         model = Resnet18MetricModel(embedding_dim)
         transform = CommonImageToDlTensorForTraining()
 
-        y_encoder = LabelEncoder()
-        y_list = [y_loader(i) for i in range(size_of_dataset)]
-        y_encoder.fit(y_list)
-        num_classes = len(y_encoder.classes_)
+        encoded_y_list = DeepMetricLearningImageTrainverV871.transform_y_loader_to_encoded_y_list(y_loader, size_of_dataset)
+        num_classes = len(set(encoded_y_list))
         smart_print(f"Number of classes: {num_classes}")
-        y_encoded_list = y_encoder.transform(y_list)
 
-        dataset = GenericLambdaDataset(lambda_dict={'x': lambda i: transform(x_loader(i)), 'y': lambda i: y_encoded_list[i]}, length=size_of_dataset)
+        dataset = GenericLambdaDataset(lambda_dict={'x': lambda i: transform(x_loader(i)), 'y': lambda i: encoded_y_list[i]}, length=size_of_dataset)
         dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
         
         loss_fn = ArcFaceLoss(embedding_dim=embedding_dim, num_classes=num_classes)
         
         # Optimizer
         optimizer = Adam(list(model.parameters()) + list(loss_fn.parameters()), lr=lr)
-
         
         accelerator = AcceleratorSetting.accelerator
         model, optimizer, dataloader, loss_fn = accelerator.prepare(model, optimizer, dataloader, loss_fn)
