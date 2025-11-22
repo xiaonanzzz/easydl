@@ -59,5 +59,64 @@ class GenericPytorchDataset(Dataset):
                 value = torch.tensor(value)
             data[col] = value
         return data
+
+
+class GenericLambdaDataset(Dataset):
+    """
+    A generic PyTorch Dataset class that uses lambda functions to generate data.
     
+    Args:
+        lambda_dict (dict): A dictionary where keys are feature names and values are 
+            lambda functions that take an index and return the corresponding value.
+        length (int): The length of the dataset (required for __len__).
+    """
+    def __init__(self, lambda_dict, length):
+        """
+        Initializes the GenericLambdaDataset.
+        
+        Args:
+            lambda_dict (dict): Dictionary of lambda functions. Each function should 
+                accept an index (int) and return a value.
+            length (int): The total number of items in the dataset.
+        """
+        if not isinstance(lambda_dict, dict):
+            raise TypeError("lambda_dict must be a dictionary.")
+        if not isinstance(length, int) or length < 0:
+            raise ValueError("length must be a non-negative integer.")
+        
+        self.lambda_dict = lambda_dict
+        self.length = length
+    
+    def __len__(self):
+        """
+        Returns the number of items in the dataset.
+        
+        Returns:
+            int: The length of the dataset.
+        """
+        return self.length
+    
+    def __getitem__(self, index):
+        """
+        Fetches the data for a given index by calling each lambda function with the index.
+        
+        Args:
+            index (int): Index of the data item to retrieve.
+            
+        Returns:
+            dict: A dictionary where keys are from lambda_dict and values are the 
+                results of calling the corresponding lambda function with index.
+        """
+        if index < 0 or index >= self.length:
+            raise IndexError(f"Index {index} is out of range for dataset of length {self.length}")
+        
+        data = {}
+        for key, lambda_func in self.lambda_dict.items():
+            try:
+                value = lambda_func(index)
+                data[key] = value
+            except Exception as e:
+                raise RuntimeError(f"Error calling lambda function for key '{key}' at index {index}: {e}") from e
+        
+        return data
 

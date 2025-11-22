@@ -3,13 +3,13 @@ from easydl.utils import smart_print
 import torch
 from easydl.dml.pytorch_models import Resnet18MetricModel, EfficientNetMetricModel, VitMetricModel, Resnet50MetricModel
 from easydl.dml.loss import ProxyAnchorLoss, ArcFaceLoss
-from easydl.data import GenericPytorchDataset
+from easydl.data import GenericPytorchDataset, GenericLambdaDataset
 from easydl.image import CommonImageToDlTensorForTraining, ImageToDlTensor
 from torch.utils.data import DataLoader
 from torch.optim import Adam
 from easydl.common_trainer import train_xy_model_for_epochs
 from easydl.utils import AcceleratorSetting
-
+from sklearn.preprocessing import LabelEncoder
 """
 This file contains training algorithms for training a model, in most of the algorithms, we use normalized names for data processing.
 Such as, 'x' for input image tensor and 'y' for label tensor. 
@@ -94,3 +94,39 @@ model_param_path=None, use_accelerator=False, lr=1e-4):
 
     # Train
     train_xy_model_for_epochs(model, dataloader, optimizer, loss_fn, device, num_epochs=num_epochs)
+
+
+class DeepMetricLearningImageTrainverV871:
+    # accelerator is required. 
+    @staticmethod
+    def turn_df_to_x_y_loader(df):
+        return lambda x: df['x'][x], lambda x: df['y'][x], len(df)
+
+    @staticmethod
+    def train_resnet18_with_arcface_loss(x_loader, y_loader, size_of_dataset, embedding_dim=128, batch_size=256, num_epochs=10, lr=1e-4):
+        AcceleratorSetting.init()   
+        
+        model = Resnet18MetricModel(embedding_dim)
+        transform = CommonImageToDlTensorForTraining()
+
+        y_encoder = LabelEncoder()
+        y_list = [y_loader(i) for i in range(size_of_dataset)]
+        y_encoder.fit(y_list)
+        num_classes = len(y_encoder.classes_)
+        smart_print(f"Number of classes: {num_classes}")
+        y_encoded_list = y_encoder.transform(y_list)
+
+        dataset = GenericLambdaDataset(lambda_dict={'x': lambda i: transform(x_loader(i)), 'y': lambda i: y_encoded_list[i]}, length=size_of_dataset)
+        dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+        
+        loss_fn = ArcFaceLoss(embedding_dim=embedding_dim, num_classes=num_classes)
+        
+        # Optimizer
+        optimizer = Adam(list(model.parameters()) + list(loss_fn.parameters()), lr=lr)
+
+        
+        accelerator = AcceleratorSetting.accelerator
+        model, optimizer, dataloader, loss_fn = accelerator.prepare(model, optimizer, dataloader, loss_fn)
+
+        # Train
+        train_xy_model_for_epochs(model, dataloader, optimizer, loss_fn, accelerator.device, num_epochs=num_epochs)
