@@ -70,6 +70,24 @@ class Resnet18MetricModel(nn.Module):
     """
 
     valid_weights_suffixes = {"IMAGENET1K_V1", "IMAGENET1K_V2"}
+    @staticmethod
+    def create_image2vector_wrapper(embedding_dim, model_param_path=None):
+        """
+        Create a wrapper for the Resnet 18 model that returns a normalized embedding vector for each input image.
+        Args:
+            embedding_dim: the dimension of the embedding space
+            model_param_path: the path to the model parameters, optional. If not provided, the model will be initialized with the default weights.
+        Returns:
+            ImageModelWrapper: a wrapper for the Resnet 18 model that returns a normalized embedding vector for each input image
+        """
+        weights_name = f"ResNet18_Weights.IMAGENET1K_V1"
+        weights = get_weight(weights_name)
+        image_transform = weights.transforms()
+
+        model = Resnet18MetricModel(embedding_dim)
+        if model_param_path:
+            model.load_state_dict(torch_load_with_prefix_removal(model_param_path))
+        return ImageModelWrapper(model, image_transform)
 
     def __init__(self, embedding_dim):
         # embedding dim is the dimension of the embedding space, if it is set to 128, the output of the model will be a 128-dimensional vector for each input image. 
@@ -219,6 +237,7 @@ class Resnet50MetricModel(nn.Module):
             return output
 
 def create_resnet18_image2vector_wrapper(embedding_dim, model_param_path=None):
+    # TODO: deprecate this function
     # a wrapper that takes an image and returns a vector
     model = Resnet18MetricModel(embedding_dim)
     if model_param_path:
