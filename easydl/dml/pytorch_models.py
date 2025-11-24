@@ -140,6 +140,20 @@ class Resnet50MetricModel(nn.Module):
 
     valid_weights_suffixes = {"IMAGENET1K_V1", "IMAGENET1K_V2"}
 
+    @staticmethod
+    def create_image2vector_wrapper(embedding_dim, model_param_path=None):
+        image_model = Resnet50MetricModel(embedding_dim=embedding_dim, weights_suffix="IMAGENET1K_V1")
+        if model_param_path:
+            try:
+                image_model.load_state_dict(torch_load_with_prefix_removal(model_param_path))
+            except Exception as e:
+                print(f"Error loading model: {e}")
+                print(f"Trying to load model from {model_param_path} with prefix removal")
+                image_model.load_state_dict(torch_load_with_prefix_removal(model_param_path))
+                print(f"Model loaded successfully")
+        image_model = ImageModelWrapper(image_model, image_model.image_transform)
+        return image_model
+
     def __init__(self, embedding_dim, weights_suffix="IMAGENET1K_V1"):
         # embedding dim is the dimension of the embedding space, if it is set to 128, the output of the model will be a 128-dimensional vector for each input image. 
 
@@ -150,6 +164,8 @@ class Resnet50MetricModel(nn.Module):
         self.backbone = backbone
         self.embedding = nn.Linear(backbone.fc.in_features, embedding_dim)
         self.backbone.fc = nn.Identity()
+        weights = get_weight(weights_name)
+        self.image_transform = weights.transforms()
         
         # Store intermediate features
         self.intermediate_features = {}
