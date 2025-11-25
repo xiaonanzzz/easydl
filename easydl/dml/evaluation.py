@@ -72,3 +72,18 @@ def evaluate_major_cluster_precision_recall(embeddings_dataframe):
     precision = tp / (tp + fp)
     recall = tp / (tp + fn)
     return {'precision': precision, 'recall': recall, 'tp': tp, 'fp': fp, 'fn': fn, 'major_cluster_id': major_cluster_id, 'major_cluster_label': major_cluster_label}
+
+
+
+class EmbeddingEvaluationAgglomerativeClustering:
+
+    @staticmethod
+    def evaluate_given_threshold(embeddings_dataframe, threshold=2.0) -> dict:
+        from easydl.clustering.functions import agglomerative_clustering_pairwise_cosine_distance_with_threshold
+        from easydl.clustering.metrics import calculate_clustering_metrics_all_in_one
+        df_to_be_clustered = embeddings_dataframe.copy()
+
+        df_clustered = agglomerative_clustering_pairwise_cosine_distance_with_threshold(df_to_be_clustered, threshold=threshold)
+
+        results = calculate_clustering_metrics_all_in_one(df_clustered)
+        return results
