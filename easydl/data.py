@@ -1,7 +1,7 @@
 import torch
 from torch.utils.data import Dataset
 import pandas as pd
-
+from sklearn.preprocessing import LabelEncoder
 
 class GenericPytorchDataset(Dataset):
     """
@@ -60,6 +60,39 @@ class GenericPytorchDataset(Dataset):
             data[col] = value
         return data
 
+
+class ImageLabelDataframeDatasetAutoLabelEncoder(GenericPytorchDataset):
+    """
+    A PyTorch Dataset class for image-label pairs from a DataFrame with automatic label encoding.
+    
+    This class extends GenericPytorchDataset and automatically handles label encoding for
+    classification tasks. It expects a DataFrame with 'x' (image paths/items) and 'y' (labels) columns,
+    applies image transformations to 'x', and automatically encodes string labels in 'y' to integers
+    using sklearn's LabelEncoder.
+    
+    Args:
+        df (pd.DataFrame): DataFrame containing the data. Must have 'x' and 'y' columns.
+            - 'x': Image paths or image items to be transformed
+            - 'y': String labels that will be automatically encoded to integers
+        image_item_to_tensor_transform (callable): A function that takes an image item (from 'x' column)
+            and returns a PyTorch tensor. This is applied to each image before returning it.
+    
+    Example:
+        >>> df = pd.DataFrame({'x': ['path/to/img1.jpg', 'path/to/img2.jpg'], 
+        ...                    'y': ['cat', 'dog']})
+        >>> transform = CommonImageToDlTensorForTraining()
+        >>> dataset = ImageLabelDataframeDatasetAutoLabelEncoder(df, transform)
+        >>> sample = dataset[0]  # Returns {'x': tensor(...), 'y': tensor(0)} or tensor(1)
+    """
+    def __init__(self, df, image_item_to_tensor_transform):
+        assert 'x' in df.columns and 'y' in df.columns, "The dataframe must have 'x' and 'y' columns"
+        self.y_label_encoder = LabelEncoder()
+        self.y_label_encoder.fit(df['y'])
+        transforms_dict = {
+            'x': image_item_to_tensor_transform,
+            'y': lambda y_original: self.y_label_encoder.transform([y_original])[0],
+        }
+        super().__init__(df, transforms_dict)
 
 class GenericLambdaDataset(Dataset):
     """
