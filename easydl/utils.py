@@ -24,6 +24,15 @@ class AcceleratorSetting:
         AcceleratorSetting.device = AcceleratorSetting.accelerator.device
         AcceleratorSetting.using_accelerator = True
 
+    @staticmethod
+    def stop_accelerator():
+        """ Stop the accelerator, to call this function multiple times is safe """
+        if AcceleratorSetting.accelerator is not None:
+            AcceleratorSetting.accelerator.stop()
+            AcceleratorSetting.accelerator = None
+            AcceleratorSetting.device = None
+            AcceleratorSetting.using_accelerator = False
+
     
 def set_seed(seed: int) -> None:
     """Set random seed for reproducibility.

@@ -135,3 +135,45 @@ class DeepMetricLearningImageTrainverV871:
 
         # Train
         train_xy_model_for_epochs(model, dataloader, optimizer, loss_fn, accelerator.device, num_epochs=num_epochs)
+
+class DeepMetricLearningImageTrainverV971:
+    def __init__(self, ds_train, number_of_classes, model_name='resnet18',loss_name="arcface_loss", embedding_dim=128, batch_size=256, num_epochs=10, lr=1e-4):
+        AcceleratorSetting.init()
+
+        self.number_of_classes = number_of_classes
+        self.model_name = model_name
+        self.loss_name = loss_name
+        self.embedding_dim = embedding_dim
+        self.batch_size = batch_size
+        self.num_epochs = num_epochs
+        self.lr = lr
+
+        model = self.get_model()
+        dataloader = DataLoader(ds_train, batch_size=self.batch_size, shuffle=True)
+        loss_fn = self.get_loss_fn()
+        optimizer = Adam(list(model.parameters()) + list(loss_fn.parameters()), lr=self.lr)
+
+        accelerator = AcceleratorSetting.accelerator
+        model, optimizer, dataloader, loss_fn = accelerator.prepare(model, optimizer, dataloader, loss_fn)
+
+        # Train it! Train it! Train it!
+        train_xy_model_for_epochs(model, dataloader, optimizer, loss_fn, accelerator.device, num_epochs=num_epochs)
+
+    def get_model(self):
+        if self.model_name == 'resnet18':
+            return Resnet18MetricModel(self.embedding_dim)
+        elif self.model_name == 'resnet50':
+            return Resnet50MetricModel(self.embedding_dim, weights_suffix="IMAGENET1K_V1")
+        elif self.model_name.lower().startswith('efficientnet_b'):
+            return EfficientNetMetricModel(model_name=self.model_name, embedding_dim=self.embedding_dim)
+        elif self.model_name.lower().startswith('vit_'):
+            return VitMetricModel(model_name=self.model_name, embedding_dim=self.embedding_dim, weights_suffix="IMAGENET1K_V1")
+
+
+    def get_loss_fn(self):
+        if self.loss_name == 'arcface_loss':
+            return ArcFaceLoss(embedding_dim=self.embedding_dim, num_classes=self.number_of_classes)
+        elif self.loss_name == 'proxy_anchor_loss':
+            return ProxyAnchorLoss(num_classes=self.number_of_classes, embedding_dim=self.embedding_dim)
+        else:
+            raise ValueError(f"Loss {self.loss_name} is not supported")

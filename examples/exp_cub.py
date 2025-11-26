@@ -1,6 +1,6 @@
 from datasets import load_dataset
-from easydl.data import GenericLambdaDataset
-from easydl.dml.trainer import DeepMetricLearningImageTrainverV871
+from easydl.data import GenericLambdaDataset, GenericXYLambdaAutoLabelEncoderDataset
+from easydl.dml.trainer import DeepMetricLearningImageTrainverV871, DeepMetricLearningImageTrainverV971
 from easydl.dml.pytorch_models import Resnet18MetricModel
 from easydl.dml.evaluation import evaluate_embedding_top1_accuracy_ignore_self
 from easydl.dml.infer import images_to_embeddings_one_by_one
@@ -8,11 +8,14 @@ import pandas as pd
 import numpy as np
 from tqdm import tqdm
 from sklearn.preprocessing import LabelEncoder
+from easydl.image import CommonImageToDlTensorForTraining
+import os
+from pathlib import Path
 
 class ExpCubConfig:
     embedding_dim = 128
     batch_size = 256
-    num_epochs = 4
+    num_epochs = 2
     lr = 1e-4
 
 def train_main():
@@ -21,6 +24,44 @@ def train_main():
     y_loader = lambda i: ds['train'][i]['text']
     DeepMetricLearningImageTrainverV871.train_resnet18_with_arcface_loss(x_loader, y_loader, len(ds['train']), embedding_dim=ExpCubConfig.embedding_dim, batch_size=ExpCubConfig.batch_size, num_epochs=ExpCubConfig.num_epochs, lr=ExpCubConfig.lr)
 
+
+class WorkingDirManager:
+    def __init__(self, exp_dir_path):
+        self.exp_dir_path = Path(exp_dir_path)
+        self.original_working_dir_path = os.getcwd()
+
+    def swtich_to_exp_dir(self):
+        self.exp_dir_path.mkdir(parents=True, exist_ok=True)
+        os.chdir(self.exp_dir_path)
+
+    def switch_back_to_original_working_dir(self):
+        os.chdir(self.original_working_dir_path)
+
+
+def exp_cub_v971():
+
+    # prepare output directory
+    working_dir_manager = WorkingDirManager('exp_cub_v971_tmp')
+    working_dir_manager.swtich_to_exp_dir()
+
+    # prepare dataset
+    ds = load_dataset("cassiekang/cub200_dataset")
+    image_item_to_tensor_transform = CommonImageToDlTensorForTraining()
+    x_loader = lambda i: image_item_to_tensor_transform(ds['train'][i]['image'])
+    y_loader = lambda i: ds['train'][i]['text']
+    ds_train = GenericXYLambdaAutoLabelEncoderDataset(x_loader, y_loader, len(ds['train']))
+    # train model
+    DeepMetricLearningImageTrainverV971(ds_train, ds_train.get_number_of_classes(), model_name='resnet18', loss_name='arcface_loss', embedding_dim=ExpCubConfig.embedding_dim, batch_size=ExpCubConfig.batch_size, num_epochs=ExpCubConfig.num_epochs, lr=ExpCubConfig.lr)
+
+    # evaluate model
+    for epoch in range(1, ExpCubConfig.num_epochs + 1):
+        model_path = f'model_epoch_{epoch:03d}.pth'
+        if os.path.exists(model_path):
+            results = evaluate_one_epoch(model_path)
+            print(f"Epoch {epoch}: {results}")
+            os.remove(model_path)
+    
+    working_dir_manager.switch_back_to_original_working_dir()
 
 def evaluate_one_epoch(model_path):
     """
@@ -70,7 +111,7 @@ def evaluate_one_epoch(model_path):
     return results
 
 
-
-
 if __name__ == "__main__":
-    evaluate_one_epoch('model_epoch_001.pth')
+    # evaluate_one_epoch('model_epoch_001.pth')
+
+    exp_cub_v971()
