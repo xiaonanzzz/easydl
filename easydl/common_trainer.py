@@ -67,7 +67,7 @@ def default_epoch_end_callback(state_cache):
         safe_save_model(model, save_path)
 
 
-def train_xy_model_for_epochs(model, dataloader, optimizer, loss_fn, device, num_epochs=10, epoch_end_callback=default_epoch_end_callback):
+def train_xy_model_for_epochs(model, dataloader, optimizer, loss_fn, device=None, num_epochs=10, epoch_end_callback=default_epoch_end_callback):
     
     # !!! state_cache is a dictionary that stores the state of the training process, such as the best model, the best loss, the best accuracy, etc.
     # if you provide callback functions, provide a state_cache to store the state of the training process

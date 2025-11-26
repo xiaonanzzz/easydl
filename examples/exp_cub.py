@@ -12,12 +12,27 @@ from easydl.image import CommonImageToDlTensorForTraining
 import os
 from pathlib import Path
 from easydl.common_infer import infer_x_dataset_with_simple_stacking
+from easydl.utils import AcceleratorSetting
 
 class ExpCubConfig:
-    embedding_dim = 128
+    embedding_dim = 384
     batch_size = 256
     num_epochs = 2
     lr = 1e-4
+
+
+
+def get_test_dataset_with_encoded_labels() -> GenericXYLambdaAutoLabelEncoderDataset:
+    """
+    Get the test dataset and encoded labels.
+    """
+    # prepare dataset
+    ds = load_dataset("cassiekang/cub200_dataset")
+    image_item_to_tensor_transform = CommonImageToDlTensorForTraining()
+    x_loader = lambda i: image_item_to_tensor_transform(ds['test'][i]['image'])
+    y_loader = lambda i: ds['test'][i]['text']
+    ds_test = GenericXYLambdaAutoLabelEncoderDataset(x_loader, y_loader, len(ds['test']))
+    return ds_test
 
 def train_main():
     ds = load_dataset("cassiekang/cub200_dataset")
@@ -54,7 +69,9 @@ def exp_cub_v971():
     # train model
     DeepMetricLearningImageTrainverV971(ds_train, ds_train.get_number_of_classes(), model_name='resnet18', loss_name='arcface_loss', embedding_dim=ExpCubConfig.embedding_dim, batch_size=ExpCubConfig.batch_size, num_epochs=ExpCubConfig.num_epochs, lr=ExpCubConfig.lr)
 
-
+    if not AcceleratorSetting.is_local_main_process():
+        # the evaluation is only done on the local main process
+        return
 
     # evaluate model
     for epoch in range(1, ExpCubConfig.num_epochs + 1):
@@ -80,28 +97,20 @@ def evaluate_one_epoch(model_path):
             - result_dataframe: DataFrame with detailed results
     """
     # Load dataset
-    ds = load_dataset("cassiekang/cub200_dataset")
-    test_size = len(ds['test'])
-    
-    # Encode labels for test set
-    y_list = [ds['test'][i]['text'] for i in range(test_size)]
-    y_encoder = LabelEncoder()
-    encoded_y_list = y_encoder.fit_transform(y_list)
-    
-    # Get list of PIL images from test set
-    test_images = [ds['test'][i]['image'] for i in range(test_size)]
+    ds_test = get_test_dataset_with_encoded_labels()
     
     # Load model as ImageModelWrapper
-    model_wrapper = Resnet18MetricModel.create_image2vector_wrapper(embedding_dim=ExpCubConfig.embedding_dim, model_param_path=model_path)
+    model_wrapper = Resnet18MetricModel(ExpCubConfig.embedding_dim, model_param_path=model_path)
     
     # Get embeddings using images_to_embeddings_one_by_one
     print("Running inference on test set...")
-    all_embeddings = images_to_embeddings_one_by_one(test_images, model_wrapper)
+    # roughly each batch size = GPU memory / 30 MB. E.g. 20GB GPU memory, batch size = 667.
+    all_embeddings = infer_x_dataset_with_simple_stacking(ds_test, model_wrapper, batch_size=100)
     
     # Create dataframe for evaluation
     embeddings_df = pd.DataFrame({
         'embedding': [emb for emb in all_embeddings],
-        'label': encoded_y_list
+        'label': ds_test.get_y_list_with_encoded_labels()
     })
     
     # Evaluate
@@ -110,21 +119,8 @@ def evaluate_one_epoch(model_path):
     
     print(f"Top-1 Accuracy: {results['avg_top1_accuracy']:.4f}")
     print(f"Accuracy Upper Bound: {results['accuracy_upper_bound']:.4f}")
-    
+
     return results
-
-
-def get_test_dataset_with_encoded_labels() -> GenericXYLambdaAutoLabelEncoderDataset:
-    """
-    Get the test dataset and encoded labels.
-    """
-    # prepare dataset
-    ds = load_dataset("cassiekang/cub200_dataset")
-    image_item_to_tensor_transform = CommonImageToDlTensorForTraining()
-    x_loader = lambda i: image_item_to_tensor_transform(ds['test'][i]['image'])
-    y_loader = lambda i: ds['test'][i]['text']
-    ds_test = GenericXYLambdaAutoLabelEncoderDataset(x_loader, y_loader, len(ds['test']))
-    return ds_test
 
 
 def exp_eval_pretrained_resenet18():
@@ -139,7 +135,8 @@ def exp_eval_pretrained_resenet18():
     
     # Get embeddings using images_to_embeddings_one_by_one
     print("Running inference on test set...")
-    all_embeddings = infer_x_dataset_with_simple_stacking(ds_test, model_wrapper)
+    # roughly each batch size = GPU memory / 30 MB. E.g. 20GB GPU memory, batch size = 667.
+    all_embeddings = infer_x_dataset_with_simple_stacking(ds_test, model_wrapper, batch_size=600)
     
     # Create dataframe for evaluation
     embeddings_df = pd.DataFrame({
@@ -160,4 +157,6 @@ def exp_eval_pretrained_resenet18():
 if __name__ == "__main__":
     # evaluate_one_epoch('model_epoch_001.pth')
 
-    exp_eval_pretrained_resenet18()
+    # exp_eval_pretrained_resenet18()
+
+    exp_cub_v971()

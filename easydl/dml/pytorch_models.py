@@ -89,7 +89,7 @@ class Resnet18MetricModel(nn.Module):
             model.load_state_dict(torch_load_with_prefix_removal(model_param_path))
         return ImageModelWrapper(model, image_transform)
 
-    def __init__(self, embedding_dim):
+    def __init__(self, embedding_dim, model_param_path=None):
         # embedding dim is the dimension of the embedding space, if it is set to 128, the output of the model will be a 128-dimensional vector for each input image. 
 
         super().__init__()
@@ -101,6 +101,9 @@ class Resnet18MetricModel(nn.Module):
         # Store intermediate features
         self.intermediate_features = {}
         self._register_hooks()
+        # load model parameters if provided
+        if model_param_path:
+            self.load_state_dict(torch_load_with_prefix_removal(model_param_path))
 
     def _register_hooks(self):
         """Register hooks to capture intermediate features"""

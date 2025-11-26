@@ -153,11 +153,10 @@ class DeepMetricLearningImageTrainverV971:
         loss_fn = self.get_loss_fn()
         optimizer = Adam(list(model.parameters()) + list(loss_fn.parameters()), lr=self.lr)
 
-        accelerator = AcceleratorSetting.accelerator
-        model, optimizer, dataloader, loss_fn = accelerator.prepare(model, optimizer, dataloader, loss_fn)
+        model, optimizer, dataloader, loss_fn = AcceleratorSetting.prepare(model, optimizer, dataloader, loss_fn)
 
         # Train it! Train it! Train it!
-        train_xy_model_for_epochs(model, dataloader, optimizer, loss_fn, accelerator.device, num_epochs=num_epochs)
+        train_xy_model_for_epochs(model, dataloader, optimizer, loss_fn, device=AcceleratorSetting.device, num_epochs=num_epochs)
 
     def get_model(self):
         if self.model_name == 'resnet18':
