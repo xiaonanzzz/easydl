@@ -1,6 +1,119 @@
 from sklearn.neighbors import NearestNeighbors
 import numpy as np
+from sklearn.metrics import precision_recall_curve, auc
+import torch
+import torch.nn.functional as F
+from easydl.utils import AcceleratorSetting
 
+
+
+def calculate_cosine_similarity_matrix(embedding_matrix: np.ndarray) -> np.ndarray:
+    """
+    Calculate the cosine similarity matrix for a given embedding matrix using PyTorch and accelerator.
+    
+    This function efficiently computes the pairwise cosine similarity between all embeddings
+    in the matrix using GPU acceleration via the accelerator framework.
+    
+    Args:
+        embedding_matrix: A numpy array of shape (N, D) where N is the number
+                         of embeddings and D is the embedding dimension.
+    
+    Returns:
+        A numpy array of shape (N, N) containing the cosine similarity matrix.
+        Each element (i, j) represents the cosine similarity between embedding i and embedding j.
+    """
+    # Initialize accelerator if not already initialized
+    if not AcceleratorSetting.using_accelerator:
+        AcceleratorSetting.init()
+    
+    device = AcceleratorSetting.device
+    
+    # Convert to torch tensor and move to device
+    embeddings = torch.from_numpy(embedding_matrix).float().to(device)
+    
+    # Normalize embeddings for efficient cosine similarity computation
+    # Cosine similarity = dot product of normalized vectors
+    embeddings_normalized = F.normalize(embeddings, p=2, dim=1)
+    
+    # Compute cosine similarity matrix
+    similarity_matrix = torch.mm(embeddings_normalized, embeddings_normalized.t())
+    
+    # Convert back to numpy array
+    return similarity_matrix.cpu().numpy()
+
+
+def create_pairwise_similarity_ground_truth_matrix(labels: np.ndarray) -> np.ndarray:
+    """
+    Creates a symmetric, binary N x N matrix where matrix[i, j] is 1 if
+    item i and item j share the same class label, and 0 otherwise.
+
+    Args:
+        labels: A 1D numpy array of class labels (e.g., [1, 2, 1, 3, 2]).
+
+    Returns:
+        An N x N numpy array (binary similarity matrix).
+    """
+    # Reshape the 1D labels array to (N, 1) and (1, N) for broadcasting
+    labels = np.array(labels)
+    labels_row = labels.reshape(-1, 1)
+    labels_col = labels.reshape(1, -1)
+
+    # Use broadcasting to check for equality across all pairs
+    # The result is a boolean matrix, which is then converted to an integer (1 or 0)
+    pairwise_matrix = (labels_row == labels_col).astype(int)
+
+    return pairwise_matrix
+
+def calculate_pr_auc_for_matrices(y_true_matrix: np.ndarray, y_score_matrix: np.ndarray) -> float:
+    """
+    Calculates the Area Under the Precision-Recall Curve (PR AUC) for a
+    predicted score matrix against a ground truth binary similarity matrix.
+
+    It only considers the unique off-diagonal elements (the upper triangle)
+    to calculate the metric, as the diagonal is usually trivial (i.e.,
+    an item is always similar to itself).
+
+    Args:
+        y_true_matrix: The N x N ground truth matrix (binary labels, 0 or 1).
+        y_score_matrix: The N x N prediction score matrix (floats, typically 0 to 1).
+
+    Returns:
+        The PR AUC score (a float between 0.0 and 1.0).
+    """
+
+    # 1. Flatten the unique, off-diagonal elements
+    # Get the indices of the upper triangle (k=1 excludes the diagonal)
+    n = y_true_matrix.shape[0]
+    # Create an index mask for the upper triangle (excluding the main diagonal)
+    # Note: np.triu_mask(n, k=1) is only available in specific numpy versions; 
+    # we use the more standard np.triu indices check below.
+    
+    # Standard way to get indices for the upper triangle (excluding diagonal)
+    i_upper = np.triu_indices(n, k=1)
+
+    # Flatten the true labels and predicted scores using the indices
+    y_true_flattened = y_true_matrix[i_upper]
+    y_score_flattened = y_score_matrix[i_upper]
+
+    # Check for empty or singular data which would cause errors
+    if len(y_true_flattened) == 0:
+        print("Error: Input matrices are too small or empty after filtering the diagonal.")
+        return 0.0
+
+    # 2. Calculate Precision, Recall, and AUC
+    try:
+        # precision_recall_curve computes precision and recall for all possible thresholds.
+        precision, recall, _ = precision_recall_curve(y_true_flattened, y_score_flattened)
+
+        # auc computes the area under the curve using the trapezoidal rule.
+        pr_auc = auc(recall, precision)
+
+        return pr_auc
+    except ValueError as e:
+        # This usually happens if the number of positive or negative samples is zero.
+        # This is a good sanity check for highly imbalanced/degenerate data.
+        print(f"Error during AUC calculation (likely due to single-class data): {e}")
+        return 0.0
 
 def evaluate_embedding_top1_accuracy_ignore_self(embeddings_dataframe):
     """

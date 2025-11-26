@@ -13,11 +13,13 @@ import os
 from pathlib import Path
 from easydl.common_infer import infer_x_dataset_with_simple_stacking
 from easydl.utils import AcceleratorSetting
+from sklearn.metrics.pairwise import cosine_similarity
+from easydl.dml.evaluation import create_pairwise_similarity_ground_truth_matrix, calculate_pr_auc_for_matrices, calculate_cosine_similarity_matrix
 
 class ExpCubConfig:
     embedding_dim = 384
     batch_size = 256
-    num_epochs = 2
+    num_epochs = 10
     lr = 1e-4
 
 
@@ -35,6 +37,7 @@ def get_test_dataset_with_encoded_labels() -> GenericXYLambdaAutoLabelEncoderDat
     return ds_test
 
 def train_main():
+    # todo: deprecate this function, use DeepMetricLearningImageTrainverV971 instead
     ds = load_dataset("cassiekang/cub200_dataset")
     x_loader = lambda i: ds['train'][i]['image']
     y_loader = lambda i: ds['train'][i]['text']
@@ -74,12 +77,15 @@ def exp_cub_v971():
         return
 
     # evaluate model
+    results_summary_of_each_epoch = []
     for epoch in range(1, ExpCubConfig.num_epochs + 1):
         model_path = f'model_epoch_{epoch:03d}.pth'
         if os.path.exists(model_path):
             results = evaluate_one_epoch(model_path)
-            print(f"Epoch {epoch}: {results}")
-            os.remove(model_path)
+            results_summary_of_each_epoch.append({'epoch': epoch, 'avg_top1_accuracy': results['avg_top1_accuracy'], 'accuracy_upper_bound': results['accuracy_upper_bound'], 'pr_auc': results['pr_auc']})
+
+    results_summary_of_each_epoch_df = pd.DataFrame(results_summary_of_each_epoch)
+    results_summary_of_each_epoch_df.to_csv('results_summary_of_each_epoch.csv', index=False)
     
     working_dir_manager.switch_back_to_original_working_dir()
 
@@ -113,12 +119,20 @@ def evaluate_one_epoch(model_path):
         'label': ds_test.get_y_list_with_encoded_labels()
     })
     
-    # Evaluate
+    # Evaluate top1 accuracy
     print("Computing evaluation metrics...")
     results = evaluate_embedding_top1_accuracy_ignore_self(embeddings_df)
     
     print(f"Top-1 Accuracy: {results['avg_top1_accuracy']:.4f}")
     print(f"Accuracy Upper Bound: {results['accuracy_upper_bound']:.4f}")
+
+    # Evaluate PR AUC
+    print("Computing PR AUC...")
+    pairwise_similarity_ground_truth_matrix = create_pairwise_similarity_ground_truth_matrix(ds_test.get_y_list_with_encoded_labels())
+    pairwise_similarity_score_matrix = calculate_cosine_similarity_matrix(all_embeddings)
+    pr_auc = calculate_pr_auc_for_matrices(pairwise_similarity_ground_truth_matrix, pairwise_similarity_score_matrix)
+    print(f"PR AUC: {pr_auc:.4f}")
+    results['pr_auc'] = pr_auc
 
     return results
 
@@ -136,7 +150,7 @@ def exp_eval_pretrained_resenet18():
     # Get embeddings using images_to_embeddings_one_by_one
     print("Running inference on test set...")
     # roughly each batch size = GPU memory / 30 MB. E.g. 20GB GPU memory, batch size = 667.
-    all_embeddings = infer_x_dataset_with_simple_stacking(ds_test, model_wrapper, batch_size=600)
+    all_embeddings = infer_x_dataset_with_simple_stacking(ds_test, model_wrapper, batch_size=100)
     
     # Create dataframe for evaluation
     embeddings_df = pd.DataFrame({
@@ -144,14 +158,18 @@ def exp_eval_pretrained_resenet18():
         'label': ds_test.get_y_list_with_encoded_labels()
     })
     
-    # Evaluate
     print("Computing evaluation metrics...")
     results = evaluate_embedding_top1_accuracy_ignore_self(embeddings_df)
     
     print(f"Top-1 Accuracy: {results['avg_top1_accuracy']:.4f}")
     print(f"Accuracy Upper Bound: {results['accuracy_upper_bound']:.4f}")
-    
-    return results
+
+    pairwise_similarity_ground_truth_matrix = create_pairwise_similarity_ground_truth_matrix(ds_test.get_y_list_with_encoded_labels())
+
+    pairwise_similarity_score_matrix = calculate_cosine_similarity_matrix(all_embeddings)
+
+    pr_auc = calculate_pr_auc_for_matrices(pairwise_similarity_ground_truth_matrix, pairwise_similarity_score_matrix)
+    print(f"PR AUC: {pr_auc:.4f}")
 
 
 if __name__ == "__main__":

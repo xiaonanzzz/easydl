@@ -15,6 +15,12 @@ Examples:
 
 """
 
+def model_file_default_name_given_epoch(epoch):
+    if epoch <= 999:
+        return f'model_epoch_{epoch:03d}.pth'
+    else:
+        return f'model_epoch_{epoch}.pth'
+
 
 def safe_save_model(model, save_path):
     """
@@ -57,18 +63,15 @@ def default_epoch_end_callback(state_cache):
         if CommonCallbackConfig.save_model_dir and not os.path.exists(CommonCallbackConfig.save_model_dir):
             os.makedirs(CommonCallbackConfig.save_model_dir, exist_ok=True)
         
-        # Generate save path
-        if epoch <= 999:
-            save_path = os.path.join(CommonCallbackConfig.save_model_dir, f'model_epoch_{epoch:03d}.pth')
-        else:
-            save_path = os.path.join(CommonCallbackConfig.save_model_dir, f'model_epoch_{epoch}.pth')
+        # Generate save path    
+        save_path = os.path.join(CommonCallbackConfig.save_model_dir, model_file_default_name_given_epoch(epoch))
         
         # Use safe_save_model to handle accelerator usage
         safe_save_model(model, save_path)
 
 
 def train_xy_model_for_epochs(model, dataloader, optimizer, loss_fn, device=None, num_epochs=10, epoch_end_callback=default_epoch_end_callback):
-    
+    # TODO: deprecate this function, use train_xy_model_for_epochs_v2 instead
     # !!! state_cache is a dictionary that stores the state of the training process, such as the best model, the best loss, the best accuracy, etc.
     # if you provide callback functions, provide a state_cache to store the state of the training process
     # epoch end callback is a function that is called when the epoch ends, it can be used to save the model, the best model, the best loss, the best accuracy, etc.
@@ -107,6 +110,45 @@ def train_xy_model_for_epochs(model, dataloader, optimizer, loss_fn, device=None
         # save the states of the training process for call back functions
         avg_loss = total_loss / len(dataloader)
         smart_print(f"Epoch {epoch}: Loss = {avg_loss:.4f}")
+        state_cache['avg_loss'] = avg_loss
+        state_cache['epoch'] = epoch
+        state_cache['model'] = model
+
+        if epoch_end_callback is not None:
+            epoch_end_callback(state_cache)
+
+def train_xy_model_for_epochs_v2(model, dataloader, optimizer, loss_fn, num_epochs=10, epoch_end_callback=default_epoch_end_callback):
+    
+    assert AcceleratorSetting.using_accelerator, "Accelerator is not initialized"
+    state_cache = {}
+
+    for epoch in range(1, num_epochs + 1):
+        model.train()
+        total_loss = 0.0
+        # batch_idx starts from 0
+        progress_bar = tqdm(enumerate(dataloader), desc=f"Epoch {epoch}/{num_epochs}", total=len(dataloader))
+        for batch_idx, data in progress_bar:
+            images, labels = data['x'], data['y']
+
+            embeddings = model(images)
+            loss = loss_fn(embeddings, labels)
+
+            optimizer.zero_grad()
+            
+            AcceleratorSetting.accelerator.backward(loss)
+            optimizer.step()
+
+            total_loss += loss.item()
+
+            # Update the tqdm progress bar with current loss
+            progress_bar.set_postfix(loss=loss.item())
+        progress_bar.close()
+
+        # save the states of the training process for call back functions
+        avg_loss = total_loss / len(dataloader)
+        if AcceleratorSetting.is_local_main_process():
+            smart_print(f"Epoch {epoch}: Loss = {avg_loss:.4f}")
+
         state_cache['avg_loss'] = avg_loss
         state_cache['epoch'] = epoch
         state_cache['model'] = model

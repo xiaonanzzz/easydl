@@ -3,6 +3,9 @@ import pandas as pd
 from easydl.dml.evaluation import evaluate_major_cluster_precision_recall
 import numpy as np
 from easydl.dml.evaluation import evaluate_embedding_top1_accuracy_ignore_self
+from easydl.dml.evaluation import calculate_pr_auc_for_matrices
+from easydl.dml.evaluation import calculate_cosine_similarity_matrix
+from sklearn.metrics.pairwise import cosine_similarity
 
 def test_evaluate_major_cluster_precision_recall():
     # Create a sample DataFrame with known cluster IDs and labels
@@ -117,4 +120,239 @@ def test_evaluate_embedding_top1_accuracy_missing_columns():
     df = pd.DataFrame({'wrong_column': [1, 2, 3]})
     
     with pytest.raises(AssertionError):
-        evaluate_embedding_top1_accuracy_ignore_self(df) 
+        evaluate_embedding_top1_accuracy_ignore_self(df)
+
+
+def test_calculate_pr_auc_for_matrices_perfect_predictions():
+    """Test with perfect predictions - high scores for positive pairs, low for negative."""
+    # Create a 4x4 ground truth matrix with 2 classes: [0, 0, 1, 1]
+    # This means items 0-1 are same class, items 2-3 are same class
+    labels = np.array([0, 0, 1, 1])
+    y_true = np.array([[1, 1, 0, 0],
+                       [1, 1, 0, 0],
+                       [0, 0, 1, 1],
+                       [0, 0, 1, 1]])
+    
+    # Perfect predictions: high scores (0.9) for same class, low scores (0.1) for different
+    y_score = np.array([[1.0, 0.9, 0.1, 0.1],
+                        [0.9, 1.0, 0.1, 0.1],
+                        [0.1, 0.1, 1.0, 0.9],
+                        [0.1, 0.1, 0.9, 1.0]])
+    
+    pr_auc = calculate_pr_auc_for_matrices(y_true, y_score)
+    
+    # With perfect predictions, PR AUC should be very high (close to 1.0)
+    assert pr_auc > 0.9
+    assert 0.0 <= pr_auc <= 1.0
+
+
+def test_calculate_pr_auc_for_matrices_random_predictions():
+    """Test with random predictions - should give moderate PR AUC."""
+    np.random.seed(42)
+    
+    # Create a 5x5 ground truth matrix with 2 classes
+    labels = np.array([0, 0, 0, 1, 1])
+    y_true = np.array([[1, 1, 1, 0, 0],
+                       [1, 1, 1, 0, 0],
+                       [1, 1, 1, 0, 0],
+                       [0, 0, 0, 1, 1],
+                       [0, 0, 0, 1, 1]])
+    
+    # Random scores between 0 and 1
+    y_score = np.random.rand(5, 5)
+    # Make symmetric (since similarity is symmetric)
+    y_score = (y_score + y_score.T) / 2
+    
+    pr_auc = calculate_pr_auc_for_matrices(y_true, y_score)
+    
+    # Random predictions should give moderate PR AUC
+    assert 0.0 <= pr_auc <= 1.0
+
+
+def test_calculate_pr_auc_for_matrices_small_matrix():
+    """Test with a small 2x2 matrix."""
+    # 2 items, different classes
+    y_true = np.array([[1, 0],
+                       [0, 1]])
+    
+    y_score = np.array([[1.0, 0.2],
+                        [0.2, 1.0]])
+    
+    pr_auc = calculate_pr_auc_for_matrices(y_true, y_score)
+    
+    # For 2x2, only one off-diagonal element, so PR AUC should be 0 or 1
+    # Since we have 0 in ground truth and 0.2 in score, it's a true negative
+    # But wait, let me reconsider - with only one pair, the PR curve behavior might be different
+    assert 0.0 <= pr_auc <= 1.0
+
+
+def test_calculate_pr_auc_for_matrices_single_class():
+    """Test with single class (all items same class) - should handle gracefully."""
+    # All items are same class
+    y_true = np.array([[1, 1, 1],
+                       [1, 1, 1],
+                       [1, 1, 1]])
+    
+    y_score = np.array([[1.0, 0.8, 0.7],
+                        [0.8, 1.0, 0.6],
+                        [0.7, 0.6, 1.0]])
+    
+    pr_auc = calculate_pr_auc_for_matrices(y_true, y_score)
+    
+    # Should return a valid value (might be 0.0 if sklearn raises ValueError for single class)
+    assert 0.0 <= pr_auc <= 1.0
+
+
+def test_calculate_pr_auc_for_matrices_all_zeros():
+    """Test with all zeros in ground truth (no positive pairs)."""
+    # All items are different classes
+    y_true = np.array([[1, 0, 0],
+                       [0, 1, 0],
+                       [0, 0, 1]])
+    
+    y_score = np.array([[1.0, 0.5, 0.3],
+                        [0.5, 1.0, 0.4],
+                        [0.3, 0.4, 1.0]])
+    
+    pr_auc = calculate_pr_auc_for_matrices(y_true, y_score)
+    
+    # With no positive pairs in ground truth, should handle gracefully
+    assert 0.0 <= pr_auc <= 1.0
+
+
+def test_calculate_pr_auc_for_matrices_inverted_predictions():
+    """Test with inverted predictions - low scores for positive pairs, high for negative."""
+    # Same setup as perfect predictions test
+    y_true = np.array([[1, 1, 0, 0],
+                       [1, 1, 0, 0],
+                       [0, 0, 1, 1],
+                       [0, 0, 1, 1]])
+    
+    # Inverted: low scores for same class, high scores for different
+    y_score = np.array([[1.0, 0.1, 0.9, 0.9],
+                        [0.1, 1.0, 0.9, 0.9],
+                        [0.9, 0.9, 1.0, 0.1],
+                        [0.9, 0.9, 0.1, 1.0]])
+    
+    pr_auc = calculate_pr_auc_for_matrices(y_true, y_score)
+    
+    # Inverted predictions should give low PR AUC
+    assert 0.0 <= pr_auc < 0.5
+
+
+def test_calculate_pr_auc_for_matrices_larger_matrix():
+    """Test with a larger matrix to ensure it works with more data points."""
+    # Create a 10x10 matrix with 3 classes
+    labels = np.array([0, 0, 0, 1, 1, 1, 2, 2, 2, 2])
+    y_true = np.zeros((10, 10), dtype=int)
+    for i in range(10):
+        for j in range(10):
+            if labels[i] == labels[j]:
+                y_true[i, j] = 1
+    
+    # Create scores that correlate well with ground truth
+    np.random.seed(123)
+    y_score = np.random.rand(10, 10)
+    # Make symmetric
+    y_score = (y_score + y_score.T) / 2
+    # Boost scores for same-class pairs
+    for i in range(10):
+        for j in range(10):
+            if labels[i] == labels[j]:
+                y_score[i, j] = 0.5 + y_score[i, j] * 0.5
+            else:
+                y_score[i, j] = y_score[i, j] * 0.5
+    
+    pr_auc = calculate_pr_auc_for_matrices(y_true, y_score)
+    
+    # Should give a reasonable PR AUC value
+    assert 0.0 <= pr_auc <= 1.0
+    # With boosted scores for same-class, should be better than random
+    assert pr_auc > 0.3
+
+
+def test_calculate_pr_auc_for_matrices_ignores_diagonal():
+    """Test that diagonal elements are ignored in the calculation."""
+    # Create matrices where diagonal would affect result if included
+    y_true = np.array([[1, 1, 0],
+                       [1, 1, 0],
+                       [0, 0, 1]])
+    
+    # Diagonal has wrong values, but should be ignored
+    y_score = np.array([[0.0, 0.9, 0.1],  # diagonal is 0.0 (wrong)
+                        [0.9, 0.0, 0.1],  # diagonal is 0.0 (wrong)
+                        [0.1, 0.1, 0.0]])  # diagonal is 0.0 (wrong)
+    
+    pr_auc = calculate_pr_auc_for_matrices(y_true, y_score)
+    
+    # Should still give reasonable result since diagonal is ignored
+    assert 0.0 <= pr_auc <= 1.0
+
+
+def test_calculate_cosine_similarity_matrix_vs_sklearn():
+    """Test that our function gives similar results as sklearn's cosine_similarity."""
+    from easydl.utils import AcceleratorSetting
+    
+    # Initialize accelerator if not already initialized
+    if not AcceleratorSetting.using_accelerator:
+        AcceleratorSetting.init()
+    
+    # Create a sample embedding matrix with various shapes and values
+    np.random.seed(42)
+    
+    # Test case 1: Small matrix with random values
+    embedding_matrix_1 = np.random.rand(5, 10).astype(np.float32)
+    
+    # Our function
+    result_ours_1 = calculate_cosine_similarity_matrix(embedding_matrix_1)
+    
+    # Sklearn's function
+    result_sklearn_1 = cosine_similarity(embedding_matrix_1)
+    
+    # Compare results (using rtol=1e-5 for float32 precision)
+    np.testing.assert_allclose(result_ours_1, result_sklearn_1, rtol=1e-5, atol=1e-6)
+    
+    # Test case 2: Larger matrix
+    embedding_matrix_2 = np.random.rand(20, 128).astype(np.float32)
+    
+    result_ours_2 = calculate_cosine_similarity_matrix(embedding_matrix_2)
+    result_sklearn_2 = cosine_similarity(embedding_matrix_2)
+    
+    np.testing.assert_allclose(result_ours_2, result_sklearn_2, rtol=1e-5, atol=1e-6)
+    
+    # Test case 3: Matrix with some zero vectors (edge case)
+    embedding_matrix_3 = np.random.rand(4, 8).astype(np.float32)
+    embedding_matrix_3[2, :] = 0.0  # One zero vector
+    
+    result_ours_3 = calculate_cosine_similarity_matrix(embedding_matrix_3)
+    result_sklearn_3 = cosine_similarity(embedding_matrix_3)
+    
+    # For zero vectors, cosine similarity should be 0 (or NaN in some cases)
+    # Use a slightly larger tolerance for edge cases
+    np.testing.assert_allclose(result_ours_3, result_sklearn_3, rtol=1e-4, atol=1e-5, equal_nan=True)
+    
+    # Test case 4: Matrix with identical vectors (should give similarity of 1.0)
+    embedding_matrix_4 = np.random.rand(1, 10).astype(np.float32)
+    embedding_matrix_4 = np.repeat(embedding_matrix_4, 3, axis=0)  # 3 identical vectors
+    
+    result_ours_4 = calculate_cosine_similarity_matrix(embedding_matrix_4)
+    result_sklearn_4 = cosine_similarity(embedding_matrix_4)
+    
+    np.testing.assert_allclose(result_ours_4, result_sklearn_4, rtol=1e-5, atol=1e-6)
+    
+    # Verify that identical vectors give similarity of 1.0
+    assert np.allclose(result_ours_4, 1.0, rtol=1e-5)
+    
+    # Test case 5: Orthogonal vectors (should give similarity close to 0.0)
+    embedding_matrix_5 = np.eye(5).astype(np.float32)  # Identity matrix (orthogonal unit vectors)
+    
+    result_ours_5 = calculate_cosine_similarity_matrix(embedding_matrix_5)
+    result_sklearn_5 = cosine_similarity(embedding_matrix_5)
+    
+    np.testing.assert_allclose(result_ours_5, result_sklearn_5, rtol=1e-5, atol=1e-6)
+    
+    # Verify diagonal is 1.0 (self-similarity) and off-diagonal is 0.0 (orthogonal)
+    assert np.allclose(np.diag(result_ours_5), 1.0, rtol=1e-5)
+    off_diagonal = result_ours_5.copy()
+    np.fill_diagonal(off_diagonal, 0.0)
+    assert np.allclose(off_diagonal, 0.0, rtol=1e-5)

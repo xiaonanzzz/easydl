@@ -7,7 +7,7 @@ from easydl.data import GenericPytorchDataset, GenericLambdaDataset
 from easydl.image import CommonImageToDlTensorForTraining, ImageToDlTensor
 from torch.utils.data import DataLoader
 from torch.optim import Adam
-from easydl.common_trainer import train_xy_model_for_epochs
+from easydl.common_trainer import train_xy_model_for_epochs, train_xy_model_for_epochs_v2
 from easydl.utils import AcceleratorSetting
 from sklearn.preprocessing import LabelEncoder
 """
@@ -156,7 +156,7 @@ class DeepMetricLearningImageTrainverV971:
         model, optimizer, dataloader, loss_fn = AcceleratorSetting.prepare(model, optimizer, dataloader, loss_fn)
 
         # Train it! Train it! Train it!
-        train_xy_model_for_epochs(model, dataloader, optimizer, loss_fn, device=AcceleratorSetting.device, num_epochs=num_epochs)
+        train_xy_model_for_epochs_v2(model, dataloader, optimizer, loss_fn, num_epochs=num_epochs)
 
     def get_model(self):
         if self.model_name == 'resnet18':
