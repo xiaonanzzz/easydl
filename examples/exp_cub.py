@@ -11,6 +11,7 @@ from sklearn.preprocessing import LabelEncoder
 from easydl.image import CommonImageToDlTensorForTraining
 import os
 from pathlib import Path
+from easydl.common_infer import infer_x_dataset_with_simple_stacking
 
 class ExpCubConfig:
     embedding_dim = 128
@@ -52,6 +53,8 @@ def exp_cub_v971():
     ds_train = GenericXYLambdaAutoLabelEncoderDataset(x_loader, y_loader, len(ds['train']))
     # train model
     DeepMetricLearningImageTrainverV971(ds_train, ds_train.get_number_of_classes(), model_name='resnet18', loss_name='arcface_loss', embedding_dim=ExpCubConfig.embedding_dim, batch_size=ExpCubConfig.batch_size, num_epochs=ExpCubConfig.num_epochs, lr=ExpCubConfig.lr)
+
+
 
     # evaluate model
     for epoch in range(1, ExpCubConfig.num_epochs + 1):
@@ -111,7 +114,50 @@ def evaluate_one_epoch(model_path):
     return results
 
 
+def get_test_dataset_with_encoded_labels() -> GenericXYLambdaAutoLabelEncoderDataset:
+    """
+    Get the test dataset and encoded labels.
+    """
+    # prepare dataset
+    ds = load_dataset("cassiekang/cub200_dataset")
+    image_item_to_tensor_transform = CommonImageToDlTensorForTraining()
+    x_loader = lambda i: image_item_to_tensor_transform(ds['test'][i]['image'])
+    y_loader = lambda i: ds['test'][i]['text']
+    ds_test = GenericXYLambdaAutoLabelEncoderDataset(x_loader, y_loader, len(ds['test']))
+    return ds_test
+
+
+def exp_eval_pretrained_resenet18():
+    """
+    Evaluate a pretrained ResNet18 model on the test set of CUB dataset.
+    """
+    # Load dataset
+    ds_test = get_test_dataset_with_encoded_labels()
+    
+    # Load model as ImageModelWrapper
+    model_wrapper = Resnet18MetricModel(128)
+    
+    # Get embeddings using images_to_embeddings_one_by_one
+    print("Running inference on test set...")
+    all_embeddings = infer_x_dataset_with_simple_stacking(ds_test, model_wrapper)
+    
+    # Create dataframe for evaluation
+    embeddings_df = pd.DataFrame({
+        'embedding': [emb for emb in all_embeddings],
+        'label': ds_test.get_y_list_with_encoded_labels()
+    })
+    
+    # Evaluate
+    print("Computing evaluation metrics...")
+    results = evaluate_embedding_top1_accuracy_ignore_self(embeddings_df)
+    
+    print(f"Top-1 Accuracy: {results['avg_top1_accuracy']:.4f}")
+    print(f"Accuracy Upper Bound: {results['accuracy_upper_bound']:.4f}")
+    
+    return results
+
+
 if __name__ == "__main__":
     # evaluate_one_epoch('model_epoch_001.pth')
 
-    exp_cub_v971()
+    exp_eval_pretrained_resenet18()

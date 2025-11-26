@@ -129,6 +129,7 @@ class GenericLambdaDataset(Dataset):
 
 class GenericXYLambdaAutoLabelEncoderDataset(GenericLambdaDataset):
     def __init__(self, x_loader_lambda, y_loader_lambda, length):
+        self.original_y_lambda = y_loader_lambda
         self.y_label_encoder = LabelEncoder()
         original_y_list = [y_loader_lambda(i) for i in range(length)]
         self.y_label_encoder.fit(original_y_list)
@@ -140,3 +141,8 @@ class GenericXYLambdaAutoLabelEncoderDataset(GenericLambdaDataset):
 
     def get_number_of_classes(self) -> int:
         return len(self.y_label_encoder.classes_)
+    
+    def get_y_list_with_encoded_labels(self) -> list:
+        original_y_list = [self.original_y_lambda(i) for i in range(self.length)]
+        encoded_y_list = self.y_label_encoder.transform(original_y_list)
+        return list(encoded_y_list)

@@ -9,9 +9,32 @@ import sys
 import traceback
 
 class AcceleratorSetting:
+    """
+    Q: Why we need this class?
+    A: Because we don't want the user to manage Accelerator manually, we want to manage it for them.
+    """
     device = None
     using_accelerator = False
     accelerator = None
+
+
+    @staticmethod
+    def is_main_process() -> bool:
+        """
+        Check if the current process is the main process.
+        """
+        if AcceleratorSetting.accelerator is None:
+            return True
+        return AcceleratorSetting.accelerator.is_main_process
+
+    @staticmethod
+    def is_local_main_process() -> bool:
+        """
+        Check if the current process is the local main process.
+        """
+        if AcceleratorSetting.accelerator is None:
+            return True
+        return AcceleratorSetting.accelerator.is_local_main_process
 
     @staticmethod
     def init():
@@ -32,6 +55,20 @@ class AcceleratorSetting:
             AcceleratorSetting.accelerator = None
             AcceleratorSetting.device = None
             AcceleratorSetting.using_accelerator = False
+
+    @staticmethod
+    def wait_for_everyone():
+        """ Wait for all processes to reach this point """
+        if AcceleratorSetting.accelerator is not None:
+            AcceleratorSetting.accelerator.wait_for_everyone()
+
+    @staticmethod
+    def prepare(*args):
+        accelerator = AcceleratorSetting.accelerator
+        if accelerator is not None:
+            return accelerator.prepare(*args)
+        return args
+
 
     
 def set_seed(seed: int) -> None:
