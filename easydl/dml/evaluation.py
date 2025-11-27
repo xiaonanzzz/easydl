@@ -64,21 +64,80 @@ def create_pairwise_similarity_ground_truth_matrix(labels: np.ndarray) -> np.nda
 
     return pairwise_matrix
 
-def calculate_pr_auc_for_matrices(y_true_matrix: np.ndarray, y_score_matrix: np.ndarray) -> float:
+
+
+def evaluate_pairwise_score_matrix_with_true_label(y_true_matrix: np.ndarray, y_score_matrix: np.ndarray) -> dict:
     """
-    Calculates the Area Under the Precision-Recall Curve (PR AUC) for a
-    predicted score matrix against a ground truth binary similarity matrix.
-
-    It only considers the unique off-diagonal elements (the upper triangle)
-    to calculate the metric, as the diagonal is usually trivial (i.e.,
-    an item is always similar to itself).
-
+    Evaluate a pairwise score matrix against a ground truth label matrix.
+    
+    This function calculates two metrics:
+    1. 1NN accuracy (ignoring itself): For each item, find its nearest neighbor (excluding itself)
+       and check if they share the same class label.
+    2. PR AUC: Precision-Recall Area Under Curve using off-diagonal elements.
+    
     Args:
         y_true_matrix: The N x N ground truth matrix (binary labels, 0 or 1).
+                      y_true_matrix[i, j] = 1 if items i and j share the same class, 0 otherwise.
         y_score_matrix: The N x N prediction score matrix (floats, typically 0 to 1).
+                       Higher scores indicate higher similarity.
+    
+    Returns:
+        A dictionary with the following keys:
+        - '1nn_accuracy': The 1-nearest neighbor accuracy (float between 0.0 and 1.0)
+        - 'pr_auc': The Precision-Recall AUC score (float between 0.0 and 1.0)
+    """
+    n = y_true_matrix.shape[0]
+    assert y_score_matrix.shape == (n, n), f"Shape mismatch: y_true_matrix is {y_true_matrix.shape}, y_score_matrix is {y_score_matrix.shape}"
+    
+    # Calculate 1NN accuracy ignoring itself
+    # For each row, find the index with the highest score (excluding diagonal/itself)
+    correct_predictions = 0
+    total_predictions = 0
+    
+    for i in range(n):
+        # Get scores for row i, excluding the diagonal element (itself)
+        row_scores = y_score_matrix[i, :].copy()
+        row_scores[i] = -np.inf  # Set diagonal to -inf so it won't be selected
+        
+        # Find the index of the nearest neighbor (highest score)
+        nearest_neighbor_idx = np.argmax(row_scores)
+        
+        # Check if the nearest neighbor has the same label (y_true_matrix[i, nearest_neighbor_idx] == 1)
+        if y_true_matrix[i, nearest_neighbor_idx] == 1:
+            correct_predictions += 1
+        total_predictions += 1
+    
+    nn_accuracy = correct_predictions / total_predictions if total_predictions > 0 else 0.0
+    
+    # Calculate PR AUC using the existing function
+    metrics = calculate_precision_recall_auc_for_pairwise_score_matrix(y_true_matrix, y_score_matrix)
+    
+    metrics['top1_accuracy'] = nn_accuracy
+    return metrics
+
+
+def calculate_precision_recall_auc_for_pairwise_score_matrix(y_true_matrix: np.ndarray, y_score_matrix: np.ndarray) -> dict:
+    """
+    Calculate the Precision-Recall Area Under Curve (PR AUC) between two N x N matrices.
+
+    This function is used to evaluate the quality of similarity scores (y_score_matrix) against ground truth labels (y_true_matrix)
+    for all possible pairs in a dataset (excluding self-pairs on the diagonal). This is common in pairwise metric learning evaluation.
+
+    Args:
+        y_true_matrix: numpy.ndarray of shape (N, N)
+            Binary ground truth matrix. y_true_matrix[i, j] = 1 if i and j belong to the same class, else 0.
+        y_score_matrix: numpy.ndarray of shape (N, N)
+            Score matrix where higher values indicate stronger predicted similarity between item i and j.
 
     Returns:
-        The PR AUC score (a float between 0.0 and 1.0).
+        dict:
+            - precision_list: list or numpy array of precision values for different thresholds
+            - recall_list: list or numpy array of recall values for different thresholds
+            - pr_auc: calculated PR AUC value (float)
+            - thresholds: thresholds used to compute precision and recall
+
+    Note:
+        Only the off-diagonal upper-triangular part of the matrices is used (each pair once, no duplicates, no self-pair).
     """
 
     # 1. Flatten the unique, off-diagonal elements
@@ -98,22 +157,17 @@ def calculate_pr_auc_for_matrices(y_true_matrix: np.ndarray, y_score_matrix: np.
     # Check for empty or singular data which would cause errors
     if len(y_true_flattened) == 0:
         print("Error: Input matrices are too small or empty after filtering the diagonal.")
-        return 0.0
+        return {'precision_list': [], 'recall_list': [], 'pr_auc': 0.0, 'threshold_list': []}
 
-    # 2. Calculate Precision, Recall, and AUC
-    try:
-        # precision_recall_curve computes precision and recall for all possible thresholds.
-        precision, recall, _ = precision_recall_curve(y_true_flattened, y_score_flattened)
+    
+    # precision_recall_curve computes precision and recall for all possible thresholds.
+    precision, recall, thresholds = precision_recall_curve(y_true_flattened, y_score_flattened)
 
-        # auc computes the area under the curve using the trapezoidal rule.
-        pr_auc = auc(recall, precision)
+    # auc computes the area under the curve using the trapezoidal rule.
+    pr_auc = float(auc(recall, precision))
+    return {'precision_list': precision, 'recall_list': recall, 'pr_auc': pr_auc, 'threshold_list': thresholds}
 
-        return pr_auc
-    except ValueError as e:
-        # This usually happens if the number of positive or negative samples is zero.
-        # This is a good sanity check for highly imbalanced/degenerate data.
-        print(f"Error during AUC calculation (likely due to single-class data): {e}")
-        return 0.0
+        
 
 def evaluate_embedding_top1_accuracy_ignore_self(embeddings_dataframe):
     """
