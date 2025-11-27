@@ -14,12 +14,12 @@ from pathlib import Path
 from easydl.common_infer import infer_x_dataset_with_simple_stacking
 from easydl.utils import AcceleratorSetting
 from sklearn.metrics.pairwise import cosine_similarity
-from easydl.dml.evaluation import create_pairwise_similarity_ground_truth_matrix, calculate_pr_auc_for_matrices, calculate_cosine_similarity_matrix
+from easydl.dml.evaluation import create_pairwise_similarity_ground_truth_matrix, evaluate_pairwise_score_matrix_with_true_label, calculate_cosine_similarity_matrix
 
 class ExpCubConfig:
     embedding_dim = 384
     batch_size = 256
-    num_epochs = 10
+    num_epochs = 100
     lr = 1e-4
 
 
@@ -60,7 +60,7 @@ class WorkingDirManager:
 def exp_cub_v971():
 
     # prepare output directory
-    working_dir_manager = WorkingDirManager('exp_cub_v971_tmp')
+    working_dir_manager = WorkingDirManager('tmp/exp_cub_v971')
     working_dir_manager.swtich_to_exp_dir()
 
     # prepare dataset
@@ -70,6 +70,8 @@ def exp_cub_v971():
     y_loader = lambda i: ds['train'][i]['text']
     ds_train = GenericXYLambdaAutoLabelEncoderDataset(x_loader, y_loader, len(ds['train']))
     # train model
+    
+    
     DeepMetricLearningImageTrainverV971(ds_train, ds_train.get_number_of_classes(), model_name='resnet18', loss_name='arcface_loss', embedding_dim=ExpCubConfig.embedding_dim, batch_size=ExpCubConfig.batch_size, num_epochs=ExpCubConfig.num_epochs, lr=ExpCubConfig.lr)
 
     if not AcceleratorSetting.is_local_main_process():
@@ -82,7 +84,13 @@ def exp_cub_v971():
         model_path = f'model_epoch_{epoch:03d}.pth'
         if os.path.exists(model_path):
             results = evaluate_one_epoch(model_path)
-            results_summary_of_each_epoch.append({'epoch': epoch, 'avg_top1_accuracy': results['avg_top1_accuracy'], 'accuracy_upper_bound': results['accuracy_upper_bound'], 'pr_auc': results['pr_auc']})
+            result_of_this_epoch = {
+                'epoch': epoch,
+                'top1_accuracy': results['top1_accuracy'],
+                'pr_auc': results['pr_auc']
+            }
+            print(result_of_this_epoch)
+            results_summary_of_each_epoch.append(result_of_this_epoch)
 
     results_summary_of_each_epoch_df = pd.DataFrame(results_summary_of_each_epoch)
     results_summary_of_each_epoch_df.to_csv('results_summary_of_each_epoch.csv', index=False)
@@ -118,23 +126,14 @@ def evaluate_one_epoch(model_path):
         'embedding': [emb for emb in all_embeddings],
         'label': ds_test.get_y_list_with_encoded_labels()
     })
-    
-    # Evaluate top1 accuracy
-    print("Computing evaluation metrics...")
-    results = evaluate_embedding_top1_accuracy_ignore_self(embeddings_df)
-    
-    print(f"Top-1 Accuracy: {results['avg_top1_accuracy']:.4f}")
-    print(f"Accuracy Upper Bound: {results['accuracy_upper_bound']:.4f}")
 
     # Evaluate PR AUC
     print("Computing PR AUC...")
     pairwise_similarity_ground_truth_matrix = create_pairwise_similarity_ground_truth_matrix(ds_test.get_y_list_with_encoded_labels())
     pairwise_similarity_score_matrix = calculate_cosine_similarity_matrix(all_embeddings)
-    pr_auc = calculate_pr_auc_for_matrices(pairwise_similarity_ground_truth_matrix, pairwise_similarity_score_matrix)
-    print(f"PR AUC: {pr_auc:.4f}")
-    results['pr_auc'] = pr_auc
+    metrics = evaluate_pairwise_score_matrix_with_true_label(pairwise_similarity_ground_truth_matrix, pairwise_similarity_score_matrix)
 
-    return results
+    return metrics
 
 
 def exp_eval_pretrained_resenet18():
@@ -168,8 +167,8 @@ def exp_eval_pretrained_resenet18():
 
     pairwise_similarity_score_matrix = calculate_cosine_similarity_matrix(all_embeddings)
 
-    pr_auc = calculate_pr_auc_for_matrices(pairwise_similarity_ground_truth_matrix, pairwise_similarity_score_matrix)
-    print(f"PR AUC: {pr_auc:.4f}")
+    metrics = evaluate_pairwise_score_matrix_with_true_label(pairwise_similarity_ground_truth_matrix, pairwise_similarity_score_matrix)
+    print(f"PR AUC: {metrics['pr_auc']:.4f}")
 
 
 if __name__ == "__main__":
