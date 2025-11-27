@@ -335,3 +335,17 @@ class VitMetricModel(nn.Module):
             embeddings = self.forward(images_t)
             return smart_torch_to_numpy(embeddings)
 
+
+class DMLModelManager:
+    @staticmethod
+    def get_model(model_name, embedding_dim):
+        if model_name == 'resnet18':
+            return Resnet18MetricModel(embedding_dim)
+        elif model_name == 'resnet50':
+            return Resnet50MetricModel(embedding_dim, weights_suffix="IMAGENET1K_V1")
+        elif model_name.lower().startswith('efficientnet_b'):
+            return EfficientNetMetricModel(model_name=model_name, embedding_dim=embedding_dim)
+        elif model_name.lower().startswith('vit_'):
+            return VitMetricModel(model_name=model_name, embedding_dim=embedding_dim, weights_suffix="IMAGENET1K_V1")
+        else:
+            raise ValueError(f"Invalid model name: {model_name}. Valid model names are: resnet18, resnet50, efficientnet_b, vit_")

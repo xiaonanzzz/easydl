@@ -1,10 +1,18 @@
 from sklearn.neighbors import NearestNeighbors
+import json
 import numpy as np
 from sklearn.metrics import precision_recall_curve, auc
 import torch
 import torch.nn.functional as F
 from easydl.utils import AcceleratorSetting
-
+from easydl.common_infer import infer_x_dataset_with_simple_stacking
+from easydl.data import GenericXYLambdaAutoLabelEncoderDataset
+from easydl.dml.pytorch_models import DMLModelManager
+import os
+from easydl.common_trainer import model_file_default_name_given_epoch
+from easydl.utils import torch_load_with_prefix_removal
+import plotly.express as px
+import pandas as pd
 
 
 def calculate_cosine_similarity_matrix(embedding_matrix: np.ndarray) -> np.ndarray:
@@ -71,7 +79,7 @@ def evaluate_pairwise_score_matrix_with_true_label(y_true_matrix: np.ndarray, y_
     Evaluate a pairwise score matrix against a ground truth label matrix.
     
     This function calculates two metrics:
-    1. 1NN accuracy (ignoring itself): For each item, find its nearest neighbor (excluding itself)
+    1. Top1 accuracy (ignoring itself): For each item, find its nearest neighbor (excluding itself)
        and check if they share the same class label.
     2. PR AUC: Precision-Recall Area Under Curve using off-diagonal elements.
     
@@ -83,7 +91,7 @@ def evaluate_pairwise_score_matrix_with_true_label(y_true_matrix: np.ndarray, y_
     
     Returns:
         A dictionary with the following keys:
-        - '1nn_accuracy': The 1-nearest neighbor accuracy (float between 0.0 and 1.0)
+        - 'top1_accuracy': The 1-nearest neighbor accuracy (float between 0.0 and 1.0)
         - 'pr_auc': The Precision-Recall AUC score (float between 0.0 and 1.0)
     """
     n = y_true_matrix.shape[0]
@@ -240,7 +248,46 @@ def evaluate_major_cluster_precision_recall(embeddings_dataframe):
     recall = tp / (tp + fn)
     return {'precision': precision, 'recall': recall, 'tp': tp, 'fp': fp, 'fn': fn, 'major_cluster_id': major_cluster_id, 'major_cluster_label': major_cluster_label}
 
+class StandardEmbeddingEvaluationV1:
+    def __init__(self, test_dataset: GenericXYLambdaAutoLabelEncoderDataset):
+        self.test_dataset = test_dataset
+        self.pairwise_similarity_ground_truth_matrix = create_pairwise_similarity_ground_truth_matrix(self.test_dataset.get_y_list_with_encoded_labels())
 
+    def evaluate(self, model) -> dict:
+        all_embeddings = infer_x_dataset_with_simple_stacking(self.test_dataset, model)
+        pairwise_similarity_score_matrix = calculate_cosine_similarity_matrix(all_embeddings)
+        metrics = evaluate_pairwise_score_matrix_with_true_label(self.pairwise_similarity_ground_truth_matrix, pairwise_similarity_score_matrix)
+
+        return metrics
+
+class DeepMetricLearningImageEvaluatorOnEachEpoch:
+    def __init__(self, test_dataset: GenericXYLambdaAutoLabelEncoderDataset, model_name: str, embedding_dim: int, model_epoch_params_dir: str, num_epochs: int, evaluation_report_dir: str):
+        standard_embedding_evaluator = StandardEmbeddingEvaluationV1(test_dataset)
+
+        results_summary_of_each_epoch = []
+        
+        model = DMLModelManager.get_model(model_name, embedding_dim)
+        # for each file in the model_param_dir, load the model and evaluate the PR AUC
+        
+        for epoch in range(1, num_epochs + 1):
+            model_file_name = model_file_default_name_given_epoch(epoch)
+            model_path = os.path.join(model_epoch_params_dir, model_file_name)
+            if not os.path.exists(model_path):
+                continue
+            model.load_state_dict(torch_load_with_prefix_removal(model_path))
+
+            metrics = standard_embedding_evaluator.evaluate(model)
+            results_summary_of_each_epoch.append({
+                'epoch': epoch,
+                'top1_accuracy': metrics['top1_accuracy'],
+                'pr_auc': metrics['pr_auc'],
+            })
+                
+        results_summary_of_each_epoch_df = pd.DataFrame(results_summary_of_each_epoch)
+        results_summary_of_each_epoch_df.to_csv(os.path.join(evaluation_report_dir, 'deep_metric_learning_image_evaluator_on_each_epoch.csv'), index=False)
+        
+        fig = px.line(results_summary_of_each_epoch_df, x='epoch', y=['top1_accuracy', 'pr_auc'])
+        fig.write_html(os.path.join(evaluation_report_dir, 'deep_metric_learning_metrics_on_each_epoch.html'))
 
 class EmbeddingEvaluationAgglomerativeClustering:
 

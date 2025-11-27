@@ -10,6 +10,8 @@ from torch.optim import Adam
 from easydl.common_trainer import train_xy_model_for_epochs, train_xy_model_for_epochs_v2
 from easydl.utils import AcceleratorSetting
 from sklearn.preprocessing import LabelEncoder
+from easydl.dml.pytorch_models import DMLModelManager
+
 """
 This file contains training algorithms for training a model, in most of the algorithms, we use normalized names for data processing.
 Such as, 'x' for input image tensor and 'y' for label tensor. 
@@ -159,14 +161,7 @@ class DeepMetricLearningImageTrainverV971:
         train_xy_model_for_epochs_v2(model, dataloader, optimizer, loss_fn, num_epochs=num_epochs)
 
     def get_model(self):
-        if self.model_name == 'resnet18':
-            return Resnet18MetricModel(self.embedding_dim)
-        elif self.model_name == 'resnet50':
-            return Resnet50MetricModel(self.embedding_dim, weights_suffix="IMAGENET1K_V1")
-        elif self.model_name.lower().startswith('efficientnet_b'):
-            return EfficientNetMetricModel(model_name=self.model_name, embedding_dim=self.embedding_dim)
-        elif self.model_name.lower().startswith('vit_'):
-            return VitMetricModel(model_name=self.model_name, embedding_dim=self.embedding_dim, weights_suffix="IMAGENET1K_V1")
+        return DMLModelManager.get_model(self.model_name, self.embedding_dim)
 
 
     def get_loss_fn(self):
