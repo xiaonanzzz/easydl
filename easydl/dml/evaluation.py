@@ -249,6 +249,11 @@ def evaluate_major_cluster_precision_recall(embeddings_dataframe):
     return {'precision': precision, 'recall': recall, 'tp': tp, 'fp': fp, 'fn': fn, 'major_cluster_id': major_cluster_id, 'major_cluster_label': major_cluster_label}
 
 class StandardEmbeddingEvaluationV1:
+    @staticmethod
+    def evaluate_given_dataset(dataset: GenericXYLambdaAutoLabelEncoderDataset, model) -> dict:
+        evaluator = StandardEmbeddingEvaluationV1(dataset)
+        return evaluator.evaluate(model)
+
     def __init__(self, test_dataset: GenericXYLambdaAutoLabelEncoderDataset):
         self.test_dataset = test_dataset
         self.pairwise_similarity_ground_truth_matrix = create_pairwise_similarity_ground_truth_matrix(self.test_dataset.get_y_list_with_encoded_labels())

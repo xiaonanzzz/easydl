@@ -102,7 +102,7 @@ class GenericLambdaDataset(Dataset):
         """
         return self.length
     
-    def __getitem__(self, index):
+    def __getitem__(self, index) -> dict:
         """
         Fetches the data for a given index by calling each lambda function with the index.
         
@@ -125,6 +125,13 @@ class GenericLambdaDataset(Dataset):
                 raise RuntimeError(f"Error calling lambda function for key '{key}' at index {index}: {e}") from e
         
         return data
+
+    def extend_lambda_dict(self, lambda_dict: dict):
+        for key, lambda_func in lambda_dict.items():
+            old_lambda_func = self.lambda_dict[key]
+            new_lambda_func = lambda index: lambda_func(old_lambda_func(index))
+            self.lambda_dict[key] = new_lambda_func
+        return self
 
 
 class GenericXYLambdaAutoLabelEncoderDataset(GenericLambdaDataset):
