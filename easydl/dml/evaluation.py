@@ -1,5 +1,5 @@
 from sklearn.neighbors import NearestNeighbors
-import json
+from pathlib import Path
 import numpy as np
 from sklearn.metrics import precision_recall_curve, auc
 import torch
@@ -261,7 +261,10 @@ class StandardEmbeddingEvaluationV1:
         return metrics
 
 class DeepMetricLearningImageEvaluatorOnEachEpoch:
-    def __init__(self, test_dataset: GenericXYLambdaAutoLabelEncoderDataset, model_name: str, embedding_dim: int, model_epoch_params_dir: str, num_epochs: int, evaluation_report_dir: str):
+    def __init__(self, test_dataset: GenericXYLambdaAutoLabelEncoderDataset, model_name: str, embedding_dim: int, model_epoch_params_dir: str, num_epochs: int, evaluation_report_dir: str=None):
+        if evaluation_report_dir is None:
+            evaluation_report_dir = ''
+        Path(evaluation_report_dir).mkdir(parents=True, exist_ok=True)
         standard_embedding_evaluator = StandardEmbeddingEvaluationV1(test_dataset)
 
         results_summary_of_each_epoch = []

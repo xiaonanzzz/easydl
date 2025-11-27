@@ -8,13 +8,15 @@ import pandas as pd
 import numpy as np
 from tqdm import tqdm
 from sklearn.preprocessing import LabelEncoder
-from easydl.image import CommonImageToDlTensorForTraining
+from easydl.image import CommonImageToDlTensorForTraining, COMMON_IMAGE_PREPROCESSING_FOR_TESTING
 import os
 from pathlib import Path
 from easydl.common_infer import infer_x_dataset_with_simple_stacking
 from easydl.utils import AcceleratorSetting
 from sklearn.metrics.pairwise import cosine_similarity
 from easydl.dml.evaluation import create_pairwise_similarity_ground_truth_matrix, evaluate_pairwise_score_matrix_with_true_label, calculate_cosine_similarity_matrix
+from easydl.utils import WorkingDirManager, MainCmdManager
+from easydl.dml.evaluation import DeepMetricLearningImageEvaluatorOnEachEpoch
 
 class ExpCubConfig:
     embedding_dim = 384
@@ -23,25 +25,17 @@ class ExpCubConfig:
     lr = 1e-4
 
 
-
 def get_test_dataset_with_encoded_labels() -> GenericXYLambdaAutoLabelEncoderDataset:
     """
     Get the test dataset and encoded labels.
     """
     # prepare dataset
     ds = load_dataset("cassiekang/cub200_dataset")
-    image_item_to_tensor_transform = CommonImageToDlTensorForTraining()
+    image_item_to_tensor_transform = COMMON_IMAGE_PREPROCESSING_FOR_TESTING
     x_loader = lambda i: image_item_to_tensor_transform(ds['test'][i]['image'])
     y_loader = lambda i: ds['test'][i]['text']
     ds_test = GenericXYLambdaAutoLabelEncoderDataset(x_loader, y_loader, len(ds['test']))
     return ds_test
-
-def train_main():
-    # todo: deprecate this function, use DeepMetricLearningImageTrainverV971 instead
-    ds = load_dataset("cassiekang/cub200_dataset")
-    x_loader = lambda i: ds['train'][i]['image']
-    y_loader = lambda i: ds['train'][i]['text']
-    DeepMetricLearningImageTrainverV871.train_resnet18_with_arcface_loss(x_loader, y_loader, len(ds['train']), embedding_dim=ExpCubConfig.embedding_dim, batch_size=ExpCubConfig.batch_size, num_epochs=ExpCubConfig.num_epochs, lr=ExpCubConfig.lr)
 
 
 class WorkingDirManager:
@@ -171,9 +165,22 @@ def exp_eval_pretrained_resenet18():
     print(f"PR AUC: {metrics['pr_auc']:.4f}")
 
 
+def exp_run_evaluation_on_each_epoch():
+    """
+    Run evaluation on each epoch.
+    """
+    # Load dataset
+    ds_test = get_test_dataset_with_encoded_labels()
+    
+    DeepMetricLearningImageEvaluatorOnEachEpoch(ds_test, 'resnet18', ExpCubConfig.embedding_dim, 'tmp/exp_cub_v971', ExpCubConfig.num_epochs, 'tmp/exp_cub_v971_evaluation_report')
+
+
+def main():
+    main_cmd_manager = MainCmdManager()
+    main_cmd_manager.register_main_cmd('exp_cub_v971', exp_cub_v971)
+    main_cmd_manager.register_main_cmd('exp_eval_pretrained_resenet18', exp_eval_pretrained_resenet18)
+    main_cmd_manager.register_main_cmd('exp_run_evaluation_on_each_epoch', exp_run_evaluation_on_each_epoch)
+    main_cmd_manager.main()
+
 if __name__ == "__main__":
-    # evaluate_one_epoch('model_epoch_001.pth')
-
-    # exp_eval_pretrained_resenet18()
-
-    exp_cub_v971()
+    main()
