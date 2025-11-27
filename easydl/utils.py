@@ -7,6 +7,9 @@ from easydl.config import *
 import multiprocessing
 import sys
 import traceback
+import os
+from pathlib import Path
+import argparse
 
 class AcceleratorSetting:
     """
@@ -201,3 +204,58 @@ class AverageMeter(object):
         self.sum += val * n
         self.count += n
         self.avg = self.sum / self.count
+
+
+class WorkingDirManager:
+    def __init__(self, exp_dir_path):
+        self.exp_dir_path = Path(exp_dir_path)
+        self.original_working_dir_path = os.getcwd()
+
+    def swtich_to_exp_dir(self):
+        self.exp_dir_path.mkdir(parents=True, exist_ok=True)
+        os.chdir(self.exp_dir_path)
+
+    def switch_back_to_original_working_dir(self):
+        os.chdir(self.original_working_dir_path)
+
+
+class MainCmdManager:
+    """
+    A command manager that allows registering multiple main functions and routing
+    to them based on the --cmd argument.
+    """
+    
+    def __init__(self):
+        self.commands = {}
+    
+    def register_main_cmd(self, cmd: str, main_lambda):
+        """
+        Register a command with its corresponding main function.
+        
+        Args:
+            cmd: Command name (used with --cmd argument)
+            main_lambda: Lambda or function that handles the command's arguments
+        """
+        self.commands[cmd] = main_lambda
+    
+    def main(self):
+        """
+        Main entry point that parses command-line arguments and routes to the
+        appropriate registered command based on --cmd.
+        """
+        parser = argparse.ArgumentParser(description='Main command manager')
+        parser.add_argument('--cmd', '-c', type=str, required=True,
+                           help='Command to execute')
+        
+        # Parse known args to get the command
+        args, _ = parser.parse_known_args()
+        
+        # Check if command is registered
+        if args.cmd not in self.commands:
+            parser.error(f"Unknown command: {args.cmd}. Available commands: {list(self.commands.keys())}")
+        
+        # Get the registered lambda/function for this command
+        main_func = self.commands[args.cmd]
+        # call the main function
+        main_func()
+
