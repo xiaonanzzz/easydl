@@ -12,18 +12,22 @@ import torch.nn as nn
 
 register_heif_opener()
 
+# this is the mean and std of the image net dataset, which are widely used in the model development. 
+IMAGE_NET_NORMALIZATION_MEAN = [0.485, 0.456, 0.406]
+IMAGE_NET_NORMALIZATION_STD = [0.229, 0.224, 0.225]
+
 COMMON_IMAGE_PREPROCESSING_FOR_TRAINING = transforms.Compose([
     transforms.Resize(256), 
     transforms.RandomCrop(224), 
     transforms.ToTensor(), 
-    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    transforms.Normalize(mean=IMAGE_NET_NORMALIZATION_MEAN, std=IMAGE_NET_NORMALIZATION_STD)
     ])
 
 COMMON_IMAGE_PREPROCESSING_FOR_TESTING = transforms.Compose([
     transforms.ToTensor(),
     transforms.Resize(256), 
     transforms.CenterCrop(224), 
-    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    transforms.Normalize(mean=IMAGE_NET_NORMALIZATION_MEAN, std=IMAGE_NET_NORMALIZATION_STD)
     ])
 
 class ImageLoadError(Exception):
@@ -350,8 +354,8 @@ class Denormalize(nn.Module):
         return f"{self.__class__.__name__}(mean={self.mean.squeeze().tolist()}, std={self.std.squeeze().tolist()})"
 
 
-COMMON_TENSOR_TO_IMAGE_TRANSFORM_FOR_TESTING_V2 = transforms.Compose([
-    Denormalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+TensorToImageTransformToReverseImageNetNormalization = transforms.Compose([
+    Denormalize(mean=IMAGE_NET_NORMALIZATION_MEAN, std=IMAGE_NET_NORMALIZATION_STD),
     transforms.ToPILImage()
 ])
 
