@@ -7,6 +7,7 @@ from typing import Union, Optional
 from torchvision import transforms
 from easydl.utils import smart_print
 from pillow_heif import register_heif_opener
+import torch.nn as nn
 
 register_heif_opener()
 
@@ -47,6 +48,8 @@ class Base64ImageError(ImageLoadError):
 class S3ImageError(ImageLoadError):
     """Exception raised for errors loading images from S3."""
     pass
+
+
 
 
 def smart_read_image_v2(image_str: Union[str, Image.Image], **kwargs) -> Image.Image:
@@ -219,6 +222,64 @@ def smart_image_to_base64(image: Union[str, Image.Image], format: str = "png") -
         return base64.b64encode(image_bytes.getvalue()).decode("utf-8")
     else:
         raise ValueError(f"Expected string or PIL.Image, got {type(image).__name__}")
+
+
+class SmartImageReader(nn.Module):
+    """
+    A transform-compatible image reader that can load images from various sources.
+    
+    This class implements the transforms interface and can be used in transforms.Compose.
+    It accepts string inputs (file paths, URLs, base64, S3 paths) or PIL Image objects
+    and returns a PIL Image in RGB format.
+    
+    Args:
+        auto_retry: Number of retry attempts if loading fails (default: 0)
+        exif_transpose: Whether to transpose the image according to EXIF orientation (default: False)
+    
+    Example:
+        >>> from easydl.image import SmartImageReader
+        >>> from torchvision import transforms
+        >>> 
+        >>> transform = transforms.Compose([
+        >>>     SmartImageReader(),
+        >>>     transforms.Resize(256),
+        >>>     transforms.CenterCrop(224),
+        >>>     transforms.ToTensor(),
+        >>> ])
+        >>> 
+        >>> image = transform("path/to/image.jpg")
+        >>> # or
+        >>> image = transform("https://example.com/image.jpg")
+    """
+    
+    def __init__(self, auto_retry: int = 0, exif_transpose: bool = False):
+        self.auto_retry = auto_retry
+        self.exif_transpose = exif_transpose
+    
+    def __call__(self, image_input: Union[str, Image.Image]) -> Image.Image:
+        """
+        Read an image from various sources and convert to RGB format.
+        
+        Args:
+            image_input: Source of the image. Can be:
+                - PIL Image object
+                - Path to an image file
+                - URL (http:// or https://)
+                - Local file (file://)
+                - Base64 encoded image (base64://)
+                - S3 path (s3://)
+        
+        Returns:
+            PIL Image in RGB format
+        
+        Raises:
+            ImageLoadError: Various image loading errors (see smart_read_image)
+        """
+        return smart_read_image(image_input, auto_retry=self.auto_retry, exif_transpose=self.exif_transpose)
+    
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(auto_retry={self.auto_retry}, exif_transpose={self.exif_transpose})"
+
 
 class ImageToDlTensor:
     def __init__(self, image_preprocessing_function):
