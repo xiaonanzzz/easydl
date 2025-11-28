@@ -7,6 +7,7 @@ from typing import Union, Optional
 from torchvision import transforms
 from easydl.utils import smart_print
 from pillow_heif import register_heif_opener
+import torch
 import torch.nn as nn
 
 register_heif_opener()
@@ -296,4 +297,61 @@ class CommonImageToDlTensorForTraining(ImageToDlTensor):
 class CommonImageToDlTensorForTesting(ImageToDlTensor):
     def __init__(self):
         super().__init__(COMMON_IMAGE_PREPROCESSING_FOR_TESTING)
+
+COMMON_IMAGE_TRANSFORM_FOR_TRAINING_V2 = transforms.Compose([
+    SmartImageReader(auto_retry=3, exif_transpose=True),
+    transforms.Resize(256), 
+    transforms.RandomCrop(224), 
+    transforms.ToTensor(), 
+    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    ])
+
+COMMON_IMAGE_TRANSFORM_FOR_TESTING_V2 = transforms.Compose([
+    SmartImageReader(auto_retry=3, exif_transpose=True),
+    transforms.ToTensor(),
+    transforms.Resize(256), 
+    transforms.CenterCrop(224), 
+    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    ])
+
+
+class Denormalize(nn.Module):
+    """
+    Denormalize a tensor by reversing the normalization transform.
+    
+    Args:
+        mean: Mean values used for normalization (per channel)
+        std: Standard deviation values used for normalization (per channel)
+    """
+    def __init__(self, mean, std):
+        super().__init__()
+        self.mean = torch.tensor(mean).view(-1, 1, 1)
+        self.std = torch.tensor(std).view(-1, 1, 1)
+    
+    def __call__(self, tensor):
+        """
+        Denormalize a tensor.
+        
+        Args:
+            tensor: Normalized tensor of shape (C, H, W)
+        
+        Returns:
+            Denormalized tensor in range [0, 1] (approximately)
+        """
+        if isinstance(self.mean, torch.Tensor):
+            mean = self.mean.to(tensor.device)
+            std = self.std.to(tensor.device)
+        else:
+            mean = self.mean
+            std = self.std
+        return tensor * std + mean
+    
+    def __repr__(self):
+        return f"{self.__class__.__name__}(mean={self.mean.squeeze().tolist()}, std={self.std.squeeze().tolist()})"
+
+
+COMMON_TENSOR_TO_IMAGE_TRANSFORM_FOR_TESTING_V2 = transforms.Compose([
+    Denormalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+    transforms.ToPILImage()
+])
 

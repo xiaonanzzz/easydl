@@ -55,20 +55,6 @@ def get_small_train_dataset_with_image_and_encoded_labels(num_samples: int=200) 
     ds_train = GenericXYLambdaAutoLabelEncoderDataset(x_loader, y_loader, num_samples)
     return ds_train
 
-
-def get_test_dataset_with_encoded_labels() -> GenericXYLambdaAutoLabelEncoderDataset:
-    # TODO: remove this function
-    """
-    Get the test dataset and encoded labels.
-    """
-    # prepare dataset
-    ds = load_dataset("cassiekang/cub200_dataset")
-    image_item_to_tensor_transform = COMMON_IMAGE_PREPROCESSING_FOR_TESTING
-    x_loader = lambda i: image_item_to_tensor_transform(ds['test'][i]['image'])
-    y_loader = lambda i: ds['test'][i]['text']
-    ds_test = GenericXYLambdaAutoLabelEncoderDataset(x_loader, y_loader, len(ds['test']))
-    return ds_test
-
 def do_dml_experiment_with_cub_dataset():
     import argparse
     args_parser = argparse.ArgumentParser()
@@ -126,7 +112,8 @@ def exp_run_evaluation_on_each_epoch():
     Run evaluation on each epoch.
     """
     # Load dataset
-    ds_test = get_test_dataset_with_encoded_labels()
+    ds_test = get_test_dataset_with_image_and_encoded_labels()
+    ds_test.extend_lambda_dict({'x': COMMON_IMAGE_PREPROCESSING_FOR_TESTING})
     DeepMetricLearningImageEvaluatorOnEachEpoch(ds_test, 'resnet18', ExpCubConfig.embedding_dim, 'tmp/exp_cub_v971', ExpCubConfig.num_epochs, 'tmp/exp_cub_v971_evaluation_report')
 
 
