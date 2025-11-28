@@ -59,11 +59,15 @@ def do_dml_experiment_with_cub_dataset():
     import argparse
     args_parser = argparse.ArgumentParser()
     args_parser.add_argument('--quick_mode', action='store_true', default=False)
+    args_parser.add_argument('--model_name', type=str, default='resnet18')
+    args_parser.add_argument('--loss_name', type=str, default='proxy_anchor_loss')
+    args_parser.add_argument('--exp_dir', type=str, default='tmp/exp_cub_972')
+
     args, _ = args_parser.parse_known_args()
     quick_mode = args.quick_mode
 
     # prepare output directory
-    working_dir_manager = WorkingDirManager('tmp/exp_cub_972')
+    working_dir_manager = WorkingDirManager(args.exp_dir)
     working_dir_manager.swtich_to_exp_dir()
 
     if quick_mode:
@@ -78,7 +82,7 @@ def do_dml_experiment_with_cub_dataset():
     ds_test.extend_lambda_dict({'x': COMMON_IMAGE_PREPROCESSING_FOR_TESTING})
 
     # run training
-    DeepMetricLearningImageTrainverV971(ds_train, ds_train.get_number_of_classes(), model_name='resnet18', loss_name='arcface_loss', embedding_dim=ExpCubConfig.embedding_dim, batch_size=ExpCubConfig.batch_size, num_epochs=ExpCubConfig.num_epochs, lr=ExpCubConfig.lr)
+    DeepMetricLearningImageTrainverV971(ds_train, ds_train.get_number_of_classes(), model_name=args.model_name, loss_name=args.loss_name, embedding_dim=ExpCubConfig.embedding_dim, batch_size=ExpCubConfig.batch_size, num_epochs=ExpCubConfig.num_epochs, lr=ExpCubConfig.lr)
 
     if not AcceleratorSetting.is_local_main_process():
         # the evaluation is only done on the local main process
@@ -86,8 +90,8 @@ def do_dml_experiment_with_cub_dataset():
 
     working_dir_manager.switch_back_to_original_working_dir()
 
-    evaluator = DeepMetricLearningImageEvaluatorOnEachEpoch(ds_test, 'resnet18', ExpCubConfig.embedding_dim, 'tmp/exp_cub_972', 
-    ExpCubConfig.num_epochs, 'tmp/exp_cub_972_evaluation_report')
+    evaluator = DeepMetricLearningImageEvaluatorOnEachEpoch(ds_test, args.model_name, ExpCubConfig.embedding_dim, args.exp_dir, 
+    ExpCubConfig.num_epochs, args.exp_dir)
 
     print('Evaluation report location: ', evaluator.report_csv_path)
     df = pd.read_csv(evaluator.report_csv_path)
