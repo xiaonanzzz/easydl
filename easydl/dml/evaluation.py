@@ -11,7 +11,6 @@ from easydl.dml.pytorch_models import DMLModelManager
 import os
 from easydl.common_trainer import model_file_default_name_given_epoch
 from easydl.utils import torch_load_with_prefix_removal
-import plotly.express as px
 import pandas as pd
 
 
@@ -281,6 +280,7 @@ class DeepMetricLearningImageEvaluatorOnEachEpoch:
             model_file_name = model_file_default_name_given_epoch(epoch)
             model_path = os.path.join(model_epoch_params_dir, model_file_name)
             if not os.path.exists(model_path):
+                print(f"Model file {model_path} does not exist, skipping evaluation for epoch {epoch}")
                 continue
             model.load_state_dict(torch_load_with_prefix_removal(model_path))
 
@@ -290,12 +290,14 @@ class DeepMetricLearningImageEvaluatorOnEachEpoch:
                 'top1_accuracy': metrics['top1_accuracy'],
                 'pr_auc': metrics['pr_auc'],
             })
-                
+        if len(results_summary_of_each_epoch) == 0:
+            print("No model files found in the model_epoch_params_dir, skipping evaluation")
+            return
+
+        self.report_csv_path = os.path.join(evaluation_report_dir, 'deep_metric_learning_image_evaluator_on_each_epoch.csv')
         results_summary_of_each_epoch_df = pd.DataFrame(results_summary_of_each_epoch)
-        results_summary_of_each_epoch_df.to_csv(os.path.join(evaluation_report_dir, 'deep_metric_learning_image_evaluator_on_each_epoch.csv'), index=False)
-        
-        fig = px.line(results_summary_of_each_epoch_df, x='epoch', y=['top1_accuracy', 'pr_auc'])
-        fig.write_html(os.path.join(evaluation_report_dir, 'deep_metric_learning_metrics_on_each_epoch.html'))
+        results_summary_of_each_epoch_df.to_csv(self.report_csv_path, index=False)
+
 
 class EmbeddingEvaluationAgglomerativeClustering:
 
