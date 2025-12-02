@@ -23,6 +23,7 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
 ]
 requires-python = ">=3.7"
+# core dependencies
 dependencies = [
     "numpy>=1.19.0",
     "pillow>=8.0.0",
@@ -42,6 +43,7 @@ dependencies = [
 # Dependencies for research
 research = [
     "datasets>=4.4.1",
+    "timm>=1.0.0"
 ]
 
 # Development tools
