@@ -301,7 +301,10 @@ class VitMetricModel(nn.Module):
         model = get_model(model_name, weights=weights_name)
         
         in_feature_dim = model.heads.head.in_features
-        model.heads.head = nn.Linear(in_feature_dim, embedding_dim)
+        if embedding_dim is not None:
+            model.heads.head = nn.Linear(in_feature_dim, embedding_dim)
+        else:
+            model.heads.head = nn.Identity()
         weights = get_weight(weights_name)
         self.image_transform = weights.transforms()
         self.backbone = model

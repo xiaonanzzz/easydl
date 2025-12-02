@@ -257,12 +257,14 @@ class StandardEmbeddingEvaluationV1:
         self.test_dataset = test_dataset
         self.pairwise_similarity_ground_truth_matrix = create_pairwise_similarity_ground_truth_matrix(self.test_dataset.get_y_list_with_encoded_labels())
 
+    def evaluate_given_embeddings(self, embeddings: np.ndarray) -> dict:
+        pairwise_similarity_score_matrix = calculate_cosine_similarity_matrix(embeddings)
+        metrics = evaluate_pairwise_score_matrix_with_true_label(self.pairwise_similarity_ground_truth_matrix, pairwise_similarity_score_matrix)
+        return metrics
+
     def evaluate(self, model) -> dict:
         all_embeddings = infer_x_dataset_with_simple_stacking(self.test_dataset, model)
-        pairwise_similarity_score_matrix = calculate_cosine_similarity_matrix(all_embeddings)
-        metrics = evaluate_pairwise_score_matrix_with_true_label(self.pairwise_similarity_ground_truth_matrix, pairwise_similarity_score_matrix)
-
-        return metrics
+        return self.evaluate_given_embeddings(all_embeddings)
 
 class DeepMetricLearningImageEvaluatorOnEachEpoch:
     def __init__(self, test_dataset: GenericXYLambdaAutoLabelEncoderDataset, model_name: str, embedding_dim: int, model_epoch_params_dir: str, num_epochs: int, evaluation_report_dir: str=None):
