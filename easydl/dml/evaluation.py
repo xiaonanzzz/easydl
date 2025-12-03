@@ -253,13 +253,18 @@ class StandardEmbeddingEvaluationV1:
         evaluator = StandardEmbeddingEvaluationV1(dataset)
         return evaluator.evaluate(model)
 
-    def __init__(self, test_dataset: GenericXYLambdaAutoLabelEncoderDataset):
+    def __init__(self, 
+        test_dataset: GenericXYLambdaAutoLabelEncoderDataset,
+        save_pairwise_score_matrix_in_metric_dict: bool = False):
         self.test_dataset = test_dataset
         self.pairwise_similarity_ground_truth_matrix = create_pairwise_similarity_ground_truth_matrix(self.test_dataset.get_y_list_with_encoded_labels())
+        self.save_pairwise_score_matrix_in_metric_dict = save_pairwise_score_matrix_in_metric_dict
 
     def evaluate_given_embeddings(self, embeddings: np.ndarray) -> dict:
         pairwise_similarity_score_matrix = calculate_cosine_similarity_matrix(embeddings)
         metrics = evaluate_pairwise_score_matrix_with_true_label(self.pairwise_similarity_ground_truth_matrix, pairwise_similarity_score_matrix)
+        if self.save_pairwise_score_matrix_in_metric_dict:
+            metrics['pairwise_similarity_score_matrix'] = pairwise_similarity_score_matrix
         return metrics
 
     def evaluate(self, model) -> dict:

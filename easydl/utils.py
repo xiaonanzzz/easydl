@@ -40,15 +40,16 @@ class AcceleratorSetting:
         return AcceleratorSetting.accelerator.is_local_main_process
 
     @staticmethod
-    def init():
+    def init(**kwargs):
         """ Safely initialize the accelerator, to call this function multiple times is safe """
         from accelerate import Accelerator
         if AcceleratorSetting.accelerator is not None:
             print("Accelerator already initialized, skipping initialization")
             return
-        AcceleratorSetting.accelerator = Accelerator()
+        AcceleratorSetting.accelerator = Accelerator(**kwargs)
         AcceleratorSetting.device = AcceleratorSetting.accelerator.device
         AcceleratorSetting.using_accelerator = True
+        print(f"Accelerator initialized with device {AcceleratorSetting.device}")
 
     @staticmethod
     def stop_accelerator():
