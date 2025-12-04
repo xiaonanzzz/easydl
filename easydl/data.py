@@ -135,6 +135,15 @@ class GenericLambdaDataset(Dataset):
 
 
 class GenericXYLambdaAutoLabelEncoderDataset(GenericLambdaDataset):
+
+    @staticmethod
+    def from_df(df: pd.DataFrame, x_column='x', y_column='y'):
+        return GenericXYLambdaAutoLabelEncoderDataset(
+            x_loader_lambda=lambda index: df.iloc[index][x_column],
+            y_loader_lambda=lambda index: df.iloc[index][y_column],
+            length=len(df)
+        )
+
     def __init__(self, x_loader_lambda, y_loader_lambda, length):
         self.original_y_lambda = y_loader_lambda
         self.y_label_encoder = LabelEncoder()
