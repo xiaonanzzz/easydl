@@ -21,6 +21,8 @@ def calculate_clustering_metrics_all_in_one(df_clustered, save_input_df_clustere
     }
     
     embeddings = df_clustered['embedding'].tolist()
+    results['number_of_labels'] = df_clustered['label'].nunique()
+    results['number_of_clusters'] = df_clustered['cluster_label'].nunique()
     results['rand_score'] = rand_score(df_clustered['label'], df_clustered['cluster_label'])
     results['calinski_harabasz_score'] = calinski_harabasz_score(embeddings, df_clustered['cluster_label'].tolist())
     results['davies_bouldin_score'] = davies_bouldin_score(embeddings, df_clustered['cluster_label'].tolist())

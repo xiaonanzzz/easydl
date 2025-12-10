@@ -261,6 +261,7 @@ class StandardEmbeddingEvaluationV1:
         self.save_pairwise_score_matrix_in_metric_dict = save_pairwise_score_matrix_in_metric_dict
 
     def evaluate_given_embeddings(self, embeddings: np.ndarray) -> dict:
+        
         pairwise_similarity_score_matrix = calculate_cosine_similarity_matrix(embeddings)
         metrics = evaluate_pairwise_score_matrix_with_true_label(self.pairwise_similarity_ground_truth_matrix, pairwise_similarity_score_matrix)
         if self.save_pairwise_score_matrix_in_metric_dict:
