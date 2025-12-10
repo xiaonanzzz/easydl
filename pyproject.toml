@@ -56,7 +56,6 @@ dev = [
 
 # All features combined
 all = [
-    "easydl[train]",
     "easydl[dev]",
     "easydl[research]",
 ]
