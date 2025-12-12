@@ -2,6 +2,7 @@ import torch
 from torch.utils.data import Dataset
 import pandas as pd
 from sklearn.preprocessing import LabelEncoder
+from typing import Any
 
 class GenericPytorchDataset(Dataset):
     """
@@ -126,6 +127,10 @@ class GenericLambdaDataset(Dataset):
         
         return data
 
+    def get_value_from_key_and_index(self, key: str, index: int) -> Any:
+        lambda_func = self.lambda_dict[key]
+        return lambda_func(index)
+
     def extend_lambda_dict(self, lambda_dict: dict):
         for key, lambda_func in lambda_dict.items():
             old_lambda_func = self.lambda_dict[key]
@@ -162,3 +167,10 @@ class GenericXYLambdaAutoLabelEncoderDataset(GenericLambdaDataset):
         original_y_list = [self.original_y_lambda(i) for i in range(self.length)]
         encoded_y_list = self.y_label_encoder.transform(original_y_list)
         return list(encoded_y_list)
+
+    def get_original_y_list(self) -> list:
+        original_y_list = [self.original_y_lambda(i) for i in range(self.length)]
+        return list(original_y_list)
+
+    def get_original_y_from_index(self, index: int) -> Any:
+        return self.original_y_lambda(index)
