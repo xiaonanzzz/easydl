@@ -115,6 +115,19 @@ def smart_torch_to_numpy(tensor: torch.Tensor) -> np.ndarray:
         return tensor.numpy()
     return tensor.cpu().numpy()
 
+def smart_any_to_torch_tensor(any_obj) -> torch.Tensor:
+    """
+    Convert a any object to a torch tensor.
+    """
+    if isinstance(any_obj, torch.Tensor):
+        return any_obj
+    if isinstance(any_obj, np.ndarray):
+        return torch.from_numpy(any_obj)
+    if isinstance(any_obj, list):
+        return torch.tensor(any_obj)
+    # try to convert to torch tensor anyways. 
+    return torch.tensor(any_obj)
+
 def smart_print(*messages: str):
     """
     This is a smart print function which will print the message, and log it to a file if the experiment is configured to do so. 

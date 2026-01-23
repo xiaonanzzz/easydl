@@ -10,7 +10,7 @@ from easydl.data import GenericXYLambdaAutoLabelEncoderDataset
 from easydl.dml.pytorch_models import DMLModelManager
 import os
 from easydl.common_trainer import model_file_default_name_given_epoch
-from easydl.utils import torch_load_with_prefix_removal
+from easydl.utils import torch_load_with_prefix_removal, smart_any_to_torch_tensor
 import pandas as pd
 
 
@@ -36,7 +36,7 @@ def calculate_cosine_similarity_matrix(embedding_matrix: np.ndarray) -> np.ndarr
     device = AcceleratorSetting.device
     
     # Convert to torch tensor and move to device
-    embeddings = torch.from_numpy(embedding_matrix).float().to(device)
+    embeddings = smart_any_to_torch_tensor(embedding_matrix).float().to(device)
     
     # Normalize embeddings for efficient cosine similarity computation
     # Cosine similarity = dot product of normalized vectors
@@ -247,6 +247,7 @@ def evaluate_major_cluster_precision_recall(embeddings_dataframe):
     recall = tp / (tp + fn)
     return {'precision': precision, 'recall': recall, 'tp': tp, 'fp': fp, 'fn': fn, 'major_cluster_id': major_cluster_id, 'major_cluster_label': major_cluster_label}
 
+
 class StandardEmbeddingEvaluationV1:
     @staticmethod
     def evaluate_given_dataset(dataset: GenericXYLambdaAutoLabelEncoderDataset, model) -> dict:
@@ -271,6 +272,23 @@ class StandardEmbeddingEvaluationV1:
     def evaluate(self, model) -> dict:
         all_embeddings = infer_x_dataset_with_simple_stacking(self.test_dataset, model)
         return self.evaluate_given_embeddings(all_embeddings)
+
+
+class StandardEmbeddingEvaluationReportV2:
+    def __init__(self):
+        self.metrics = {}
+        self.ground_truth_matrix = None
+        self.pairwise_similarity_score_matrix = None
+
+def standard_embedding_evaluation_v2(embeddings: np.ndarray, labels: np.ndarray) -> StandardEmbeddingEvaluationReportV2:
+    ground_truth_matrix = create_pairwise_similarity_ground_truth_matrix(labels)
+    pairwise_similarity_score_matrix = calculate_cosine_similarity_matrix(embeddings)
+    metrics = evaluate_pairwise_score_matrix_with_true_label(ground_truth_matrix, pairwise_similarity_score_matrix)
+    report = StandardEmbeddingEvaluationReportV2()
+    report.metrics = metrics
+    report.ground_truth_matrix = ground_truth_matrix
+    report.pairwise_similarity_score_matrix = pairwise_similarity_score_matrix
+    return report
 
 class DeepMetricLearningImageEvaluatorOnEachEpoch:
     def __init__(self, test_dataset: GenericXYLambdaAutoLabelEncoderDataset, model_name: str, embedding_dim: int, model_epoch_params_dir: str, num_epochs: int, evaluation_report_dir: str=None):
