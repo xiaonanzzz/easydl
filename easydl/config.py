@@ -1,5 +1,6 @@
-import json
 import copy
+import json
+
 
 class CfgNode:
     def __init__(self, init_dict=None):
@@ -27,8 +28,11 @@ class CfgNode:
     def merge_from_dict(self, cfg_dict):
         """Recursively merge keys from a dict into this config."""
         for k, v in cfg_dict.items():
-            if (k in self._data and isinstance(self._data[k], CfgNode) 
-                and isinstance(v, dict)):
+            if (
+                k in self._data
+                and isinstance(self._data[k], CfgNode)
+                and isinstance(v, dict)
+            ):
                 self._data[k].merge_from_dict(v)
             else:
                 self[k] = v
@@ -54,10 +58,13 @@ class CfgNode:
 
 class SmartPrintConfig:
     """static class for storing the configuration of the smart print function"""
+
     log_file = None
     print_to_console = True
 
+
 class CommonCallbackConfig:
     """static class for storing the configuration of the common callback functions"""
+
     save_model_every_n_epochs = 1
-    save_model_dir = '' # by default, save the model to the current working directory
+    save_model_dir = ""  # by default, save the model to the current working directory

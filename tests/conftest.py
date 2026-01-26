@@ -7,15 +7,18 @@ Test Tiers:
 - tier3_integration: Integration tests (<5min, uses real data)
 - tier4_e2e: End-to-end tests (>5min, full pipeline)
 """
+
+import os
+import tempfile
+from pathlib import Path
+
+import numpy as np
 import pytest
 import torch
-import numpy as np
-import tempfile
-import os
-from pathlib import Path
 from PIL import Image
 
 # ============== Configuration ==============
+
 
 def pytest_configure(config):
     """Register custom markers."""
@@ -38,6 +41,7 @@ def pytest_collection_modifyitems(config, items):
 
 # ============== Device Fixtures ==============
 
+
 @pytest.fixture(scope="session")
 def device():
     """Get available device."""
@@ -46,22 +50,27 @@ def device():
 
 # ============== Data Fixtures ==============
 
+
 @pytest.fixture
 def random_embeddings():
     """Generate random normalized embeddings."""
+
     def _generate(num_samples=100, dim=64, seed=42):
         np.random.seed(seed)
         emb = np.random.randn(num_samples, dim)
         return emb / np.linalg.norm(emb, axis=1, keepdims=True)
+
     return _generate
 
 
 @pytest.fixture
 def random_labels():
     """Generate random labels."""
+
     def _generate(num_samples=100, num_classes=10, seed=42):
         np.random.seed(seed)
         return np.random.randint(0, num_classes, num_samples)
+
     return _generate
 
 
@@ -80,13 +89,13 @@ def sample_batch_tensor():
 @pytest.fixture
 def sample_pil_image():
     """Create a sample PIL image."""
-    return Image.new('RGB', (224, 224), color='red')
+    return Image.new("RGB", (224, 224), color="red")
 
 
 @pytest.fixture
 def temp_image_file(sample_pil_image):
     """Create a temporary image file."""
-    with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as f:
+    with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as f:
         sample_pil_image.save(f.name)
         yield f.name
     os.unlink(f.name)
@@ -94,12 +103,13 @@ def temp_image_file(sample_pil_image):
 
 # ============== Cluster Data Fixtures ==============
 
+
 @pytest.fixture
 def sample_cluster_data():
     """Fixture providing sample cluster data for testing."""
     return {
-        'cluster_id': [1, 1, 1, 1, 2, 2, 3, 3],
-        'label': ['A', 'A', 'A', 'B', 'A', 'C', 'B', 'B']
+        "cluster_id": [1, 1, 1, 1, 2, 2, 3, 3],
+        "label": ["A", "A", "A", "B", "A", "C", "B", "B"],
     }
 
 
@@ -107,15 +117,18 @@ def sample_cluster_data():
 def sample_cluster_df(sample_cluster_data):
     """Fixture providing a DataFrame with sample cluster data."""
     import pandas as pd
+
     return pd.DataFrame(sample_cluster_data)
 
 
 # ============== Model Fixtures ==============
 
+
 @pytest.fixture
 def resnet18_model():
     """Create ResNet18 metric model."""
     from easydl.dml.pytorch_models import Resnet18MetricModel
+
     return Resnet18MetricModel(embedding_dim=128)
 
 
@@ -123,6 +136,7 @@ def resnet18_model():
 def trained_model_path(tmp_path):
     """Create a temporary trained model checkpoint."""
     from easydl.dml.pytorch_models import Resnet18MetricModel
+
     model = Resnet18MetricModel(embedding_dim=128)
     path = tmp_path / "model.pth"
     torch.save(model.state_dict(), path)
@@ -130,6 +144,7 @@ def trained_model_path(tmp_path):
 
 
 # ============== Directory Fixtures ==============
+
 
 @pytest.fixture
 def exp_dir(tmp_path):
@@ -141,11 +156,15 @@ def exp_dir(tmp_path):
 
 # ============== Dataset Fixtures (Lazy Loading) ==============
 
+
 @pytest.fixture(scope="session")
 def cub_train_small():
     """Small CUB training dataset (cached for session)."""
     try:
-        from easydl.public_dataset.cub import get_small_train_dataset_with_image_and_encoded_labels
+        from easydl.public_dataset.cub import (
+            get_small_train_dataset_with_image_and_encoded_labels,
+        )
+
         return get_small_train_dataset_with_image_and_encoded_labels(num_samples=100)
     except Exception:
         pytest.skip("CUB dataset not available")
@@ -155,7 +174,10 @@ def cub_train_small():
 def cub_test_small():
     """Small CUB test dataset (cached for session)."""
     try:
-        from easydl.public_dataset.cub import get_small_train_dataset_with_image_and_encoded_labels
+        from easydl.public_dataset.cub import (
+            get_small_train_dataset_with_image_and_encoded_labels,
+        )
+
         return get_small_train_dataset_with_image_and_encoded_labels(num_samples=50)
     except Exception:
         pytest.skip("CUB dataset not available")

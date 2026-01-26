@@ -4,16 +4,18 @@ Tier 4 End-to-End Tests: Full Training Pipeline
 Full pipeline tests with training and evaluation.
 These tests may take several minutes to complete.
 """
-import pytest
+
 import os
-import torch
 from pathlib import Path
 
-from easydl.dml.trainer import DeepMetricLearningImageTrainverV971
+import pytest
+import torch
+
 from easydl.dml.pytorch_models import Resnet18MetricModel
+from easydl.dml.trainer import DeepMetricLearningImageTrainverV971
 from easydl.image import (
-    COMMON_IMAGE_PREPROCESSING_FOR_TRAINING,
     COMMON_IMAGE_PREPROCESSING_FOR_TESTING,
+    COMMON_IMAGE_PREPROCESSING_FOR_TRAINING,
 )
 
 
@@ -25,7 +27,7 @@ class TestTrainingPipeline:
     def test_training_completes_without_error(self, cub_train_small, exp_dir):
         """Test that training completes without errors."""
         ds_train = cub_train_small
-        ds_train.extend_lambda_dict({'x': COMMON_IMAGE_PREPROCESSING_FOR_TRAINING})
+        ds_train.extend_lambda_dict({"x": COMMON_IMAGE_PREPROCESSING_FOR_TRAINING})
 
         original_dir = os.getcwd()
         os.chdir(exp_dir)
@@ -34,12 +36,12 @@ class TestTrainingPipeline:
             DeepMetricLearningImageTrainverV971(
                 ds_train,
                 num_classes=ds_train.get_number_of_classes(),
-                model_name='resnet18',
-                loss_name='proxy_anchor_loss',
+                model_name="resnet18",
+                loss_name="proxy_anchor_loss",
                 embedding_dim=128,
                 batch_size=16,
                 num_epochs=2,
-                lr=1e-4
+                lr=1e-4,
             )
         finally:
             os.chdir(original_dir)
@@ -47,7 +49,7 @@ class TestTrainingPipeline:
     def test_model_checkpoints_saved(self, cub_train_small, exp_dir):
         """Test that model checkpoints are saved during training."""
         ds_train = cub_train_small
-        ds_train.extend_lambda_dict({'x': COMMON_IMAGE_PREPROCESSING_FOR_TRAINING})
+        ds_train.extend_lambda_dict({"x": COMMON_IMAGE_PREPROCESSING_FOR_TRAINING})
 
         original_dir = os.getcwd()
         os.chdir(exp_dir)
@@ -58,12 +60,12 @@ class TestTrainingPipeline:
             DeepMetricLearningImageTrainverV971(
                 ds_train,
                 num_classes=ds_train.get_number_of_classes(),
-                model_name='resnet18',
-                loss_name='proxy_anchor_loss',
+                model_name="resnet18",
+                loss_name="proxy_anchor_loss",
                 embedding_dim=128,
                 batch_size=16,
                 num_epochs=num_epochs,
-                lr=1e-4
+                lr=1e-4,
             )
 
             # Check that checkpoints exist
@@ -76,7 +78,7 @@ class TestTrainingPipeline:
     def test_saved_model_loadable(self, cub_train_small, exp_dir):
         """Test that saved model can be loaded and used."""
         ds_train = cub_train_small
-        ds_train.extend_lambda_dict({'x': COMMON_IMAGE_PREPROCESSING_FOR_TRAINING})
+        ds_train.extend_lambda_dict({"x": COMMON_IMAGE_PREPROCESSING_FOR_TRAINING})
 
         original_dir = os.getcwd()
         os.chdir(exp_dir)
@@ -85,12 +87,12 @@ class TestTrainingPipeline:
             DeepMetricLearningImageTrainverV971(
                 ds_train,
                 num_classes=ds_train.get_number_of_classes(),
-                model_name='resnet18',
-                loss_name='proxy_anchor_loss',
+                model_name="resnet18",
+                loss_name="proxy_anchor_loss",
                 embedding_dim=128,
                 batch_size=16,
                 num_epochs=1,
-                lr=1e-4
+                lr=1e-4,
             )
 
             # Load saved model
@@ -119,11 +121,11 @@ class TestTrainingOnGPU:
 
     def test_gpu_training(self, cub_train_small, exp_dir, device):
         """Test training on GPU."""
-        if device.type != 'cuda':
+        if device.type != "cuda":
             pytest.skip("GPU not available")
 
         ds_train = cub_train_small
-        ds_train.extend_lambda_dict({'x': COMMON_IMAGE_PREPROCESSING_FOR_TRAINING})
+        ds_train.extend_lambda_dict({"x": COMMON_IMAGE_PREPROCESSING_FOR_TRAINING})
 
         original_dir = os.getcwd()
         os.chdir(exp_dir)
@@ -132,12 +134,12 @@ class TestTrainingOnGPU:
             DeepMetricLearningImageTrainverV971(
                 ds_train,
                 num_classes=ds_train.get_number_of_classes(),
-                model_name='resnet18',
-                loss_name='proxy_anchor_loss',
+                model_name="resnet18",
+                loss_name="proxy_anchor_loss",
                 embedding_dim=128,
                 batch_size=16,
                 num_epochs=1,
-                lr=1e-4
+                lr=1e-4,
             )
         finally:
             os.chdir(original_dir)

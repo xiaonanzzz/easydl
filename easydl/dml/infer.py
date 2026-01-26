@@ -1,9 +1,13 @@
-from easydl.image import smart_read_image
-from easydl.model_wrapper import ImageModelWrapper
 import numpy as np
 from tqdm import tqdm
 
-def images_to_embeddings(images, model: ImageModelWrapper, image_reader=smart_read_image) -> np.ndarray:
+from easydl.image import smart_read_image
+from easydl.model_wrapper import ImageModelWrapper
+
+
+def images_to_embeddings(
+    images, model: ImageModelWrapper, image_reader=smart_read_image
+) -> np.ndarray:
     # TODO: deprecate this function
     """
     Convert a list of images to a numpy array of embeddings.
@@ -17,7 +21,6 @@ def images_to_embeddings(images, model: ImageModelWrapper, image_reader=smart_re
         embeddings.append(embedding)
     return np.array(embeddings)
 
-        
 
 def images_to_embeddings_one_by_one(images, model: ImageModelWrapper) -> np.ndarray:
     """
@@ -29,5 +32,3 @@ def images_to_embeddings_one_by_one(images, model: ImageModelWrapper) -> np.ndar
         embedding = model(image)
         embeddings.append(embedding)
     return np.array(embeddings)
-
-

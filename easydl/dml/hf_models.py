@@ -1,13 +1,17 @@
 """HuggingFace Vision Transformer models for image embedding."""
-from PIL import Image
+
 from typing import List
-from transformers import ViTImageProcessor, ViTModel
-from easydl.dml.inferface import ImageTensorToEmbeddingTensorInterface
+
 import torch.nn as nn
+from PIL import Image
+from transformers import ViTImageProcessor, ViTModel
+
+from easydl.dml.interface import ImageTensorToEmbeddingTensorInterface
 
 
 class HFImageToTensor:
     """Converts PIL images to tensors using HuggingFace Vision Transformer processor."""
+
     def __init__(self, pretrained_model_name: str):
         """Initialize with a pretrained ViT processor."""
         self.processor = ViTImageProcessor.from_pretrained(pretrained_model_name)
@@ -15,18 +19,21 @@ class HFImageToTensor:
     def __call__(self, x):
         """Convert image(s) to tensor format expected by ViT model."""
         kv = self.processor(images=x, return_tensors="pt")
-        kv['pixel_values'] = kv['pixel_values'].squeeze(0)
+        kv["pixel_values"] = kv["pixel_values"].squeeze(0)
         return kv
 
 
 class HFVitModel(ImageTensorToEmbeddingTensorInterface, nn.Module):
     """HuggingFace Vision Transformer model for generating image embeddings."""
-    def __init__(self, pretrained_model_name: str='google/vit-base-patch16-224-in21k'):
+
+    def __init__(
+        self, pretrained_model_name: str = "google/vit-base-patch16-224-in21k"
+    ):
         """Initialize with a pretrained ViT model."""
         super().__init__()
         self.processor = HFImageToTensor(pretrained_model_name)
         self.model = ViTModel.from_pretrained(pretrained_model_name)
-    
+
     def forward(self, x):
         """Forward pass: takes pixel values dictionary and returns CLS token embedding."""
         # x is a dictionary with 'pixel_values' key

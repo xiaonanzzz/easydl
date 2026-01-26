@@ -1,19 +1,21 @@
-import pytest
-import pandas as pd
-from easydl.dml.evaluation import evaluate_major_cluster_precision_recall
 import numpy as np
-from easydl.dml.evaluation import evaluate_embedding_top1_accuracy_ignore_self
-from easydl.dml.evaluation import calculate_precision_recall_auc_for_pairwise_score_matrix
-from easydl.dml.evaluation import calculate_cosine_similarity_matrix
+import pandas as pd
+import pytest
 from sklearn.metrics.pairwise import cosine_similarity
+
+from easydl.dml.evaluation import (
+    calculate_cosine_similarity_matrix,
+    calculate_precision_recall_auc_for_pairwise_score_matrix,
+    evaluate_embedding_top1_accuracy_ignore_self,
+    evaluate_major_cluster_precision_recall,
+)
+
 
 def test_evaluate_major_cluster_precision_recall():
     # Create a sample DataFrame with known cluster IDs and labels
     data = {
-        'cluster_id': [1, 1, 1, 1,
-                       2, 2, 3, 3],
-        'label': ['A', 'A', 'A', 'B',
-                  'A', 'C', 'B', 'B']
+        "cluster_id": [1, 1, 1, 1, 2, 2, 3, 3],
+        "label": ["A", "A", "A", "B", "A", "C", "B", "B"],
     }
     df = pd.DataFrame(data)
 
@@ -21,48 +23,48 @@ def test_evaluate_major_cluster_precision_recall():
     result = evaluate_major_cluster_precision_recall(df)
 
     # Verify results
-    assert result['major_cluster_id'] == 1  # Cluster 1 has 4 items
-    assert result['major_cluster_label'] == 'A'  # Label A is most common in cluster 1
+    assert result["major_cluster_id"] == 1  # Cluster 1 has 4 items
+    assert result["major_cluster_label"] == "A"  # Label A is most common in cluster 1
 
     # In cluster 1 (major cluster):
     # - 3 items have label 'A' (true positives)
     # - 1 item has label 'B' (false positive)
     # - 1 item with label 'A' is in cluster 2 (false negative)
-    assert result['tp'] == 3
-    assert result['fp'] == 1
-    assert result['fn'] == 1
+    assert result["tp"] == 3
+    assert result["fp"] == 1
+    assert result["fn"] == 1
 
     # Calculate expected precision and recall
     expected_precision = 3 / (3 + 1)  # tp / (tp + fp)
-    expected_recall = 3 / (3 + 1)     # tp / (tp + fn)
+    expected_recall = 3 / (3 + 1)  # tp / (tp + fn)
 
-    assert result['precision'] == expected_precision
-    assert result['recall'] == expected_recall
+    assert result["precision"] == expected_precision
+    assert result["recall"] == expected_recall
+
 
 def test_evaluate_major_cluster_precision_recall_empty():
     # Test with empty DataFrame
-    df = pd.DataFrame(columns=['cluster_id', 'label'])
+    df = pd.DataFrame(columns=["cluster_id", "label"])
 
     with pytest.raises(AssertionError):
         evaluate_major_cluster_precision_recall(df)
 
+
 def test_evaluate_major_cluster_precision_recall_single_cluster():
     # Test with single cluster and single label
-    data = {
-        'cluster_id': [1, 1, 1],
-        'label': ['A', 'A', 'A']
-    }
+    data = {"cluster_id": [1, 1, 1], "label": ["A", "A", "A"]}
     df = pd.DataFrame(data)
 
     result = evaluate_major_cluster_precision_recall(df)
 
-    assert result['major_cluster_id'] == 1
-    assert result['major_cluster_label'] == 'A'
-    assert result['tp'] == 3
-    assert result['fp'] == 0
-    assert result['fn'] == 0
-    assert result['precision'] == 1.0
-    assert result['recall'] == 1.0
+    assert result["major_cluster_id"] == 1
+    assert result["major_cluster_label"] == "A"
+    assert result["tp"] == 3
+    assert result["fp"] == 0
+    assert result["fn"] == 0
+    assert result["precision"] == 1.0
+    assert result["recall"] == 1.0
+
 
 def test_evaluate_embedding_top1_accuracy():
     # Create sample embeddings and labels
@@ -74,17 +76,15 @@ def test_evaluate_embedding_top1_accuracy():
         [1.1, 1.1],  # Class B
     ]
 
-    data = {
-        'embedding': embeddings,
-        'label': ['A', 'A', 'B', 'B']
-    }
+    data = {"embedding": embeddings, "label": ["A", "A", "B", "B"]}
     df = pd.DataFrame(data)
 
     # Calculate accuracy
     result = evaluate_embedding_top1_accuracy_ignore_self(df)
 
     # Since points are well-separated, we expect perfect accuracy
-    assert result['avg_top1_accuracy'] == 1.0
+    assert result["avg_top1_accuracy"] == 1.0
+
 
 def test_evaluate_embedding_top1_accuracy_overlapping():
     # Create sample embeddings with some overlap between classes
@@ -95,29 +95,28 @@ def test_evaluate_embedding_top1_accuracy_overlapping():
         [1.0, 1.0],  # Class B
     ]
 
-    data = {
-        'embedding': embeddings,
-        'label': ['A', 'A', 'B', 'B']
-    }
+    data = {"embedding": embeddings, "label": ["A", "A", "B", "B"]}
     df = pd.DataFrame(data)
 
     # Calculate accuracy
     result = evaluate_embedding_top1_accuracy_ignore_self(df)
 
     # We expect less than perfect accuracy due to the overlapping point
-    assert result['avg_top1_accuracy'] < 1.0
-    assert result['avg_top1_accuracy'] >= 0.0
+    assert result["avg_top1_accuracy"] < 1.0
+    assert result["avg_top1_accuracy"] >= 0.0
+
 
 def test_evaluate_embedding_top1_accuracy_empty():
     # Test with empty DataFrame
-    df = pd.DataFrame(columns=['embedding', 'label'])
+    df = pd.DataFrame(columns=["embedding", "label"])
 
     with pytest.raises(AssertionError):
         evaluate_embedding_top1_accuracy_ignore_self(df)
 
+
 def test_evaluate_embedding_top1_accuracy_missing_columns():
     # Test with missing required columns
-    df = pd.DataFrame({'wrong_column': [1, 2, 3]})
+    df = pd.DataFrame({"wrong_column": [1, 2, 3]})
 
     with pytest.raises(AssertionError):
         evaluate_embedding_top1_accuracy_ignore_self(df)
@@ -128,19 +127,20 @@ def test_calculate_pr_auc_for_matrices_perfect_predictions():
     # Create a 4x4 ground truth matrix with 2 classes: [0, 0, 1, 1]
     # This means items 0-1 are same class, items 2-3 are same class
     labels = np.array([0, 0, 1, 1])
-    y_true = np.array([[1, 1, 0, 0],
-                       [1, 1, 0, 0],
-                       [0, 0, 1, 1],
-                       [0, 0, 1, 1]])
+    y_true = np.array([[1, 1, 0, 0], [1, 1, 0, 0], [0, 0, 1, 1], [0, 0, 1, 1]])
 
     # Perfect predictions: high scores (0.9) for same class, low scores (0.1) for different
-    y_score = np.array([[1.0, 0.9, 0.1, 0.1],
-                        [0.9, 1.0, 0.1, 0.1],
-                        [0.1, 0.1, 1.0, 0.9],
-                        [0.1, 0.1, 0.9, 1.0]])
+    y_score = np.array(
+        [
+            [1.0, 0.9, 0.1, 0.1],
+            [0.9, 1.0, 0.1, 0.1],
+            [0.1, 0.1, 1.0, 0.9],
+            [0.1, 0.1, 0.9, 1.0],
+        ]
+    )
 
     result = calculate_precision_recall_auc_for_pairwise_score_matrix(y_true, y_score)
-    pr_auc = result['pr_auc']
+    pr_auc = result["pr_auc"]
 
     # With perfect predictions, PR AUC should be very high (close to 1.0)
     assert pr_auc > 0.9
@@ -153,11 +153,15 @@ def test_calculate_pr_auc_for_matrices_random_predictions():
 
     # Create a 5x5 ground truth matrix with 2 classes
     labels = np.array([0, 0, 0, 1, 1])
-    y_true = np.array([[1, 1, 1, 0, 0],
-                       [1, 1, 1, 0, 0],
-                       [1, 1, 1, 0, 0],
-                       [0, 0, 0, 1, 1],
-                       [0, 0, 0, 1, 1]])
+    y_true = np.array(
+        [
+            [1, 1, 1, 0, 0],
+            [1, 1, 1, 0, 0],
+            [1, 1, 1, 0, 0],
+            [0, 0, 0, 1, 1],
+            [0, 0, 0, 1, 1],
+        ]
+    )
 
     # Random scores between 0 and 1
     y_score = np.random.rand(5, 5)
@@ -165,7 +169,7 @@ def test_calculate_pr_auc_for_matrices_random_predictions():
     y_score = (y_score + y_score.T) / 2
 
     result = calculate_precision_recall_auc_for_pairwise_score_matrix(y_true, y_score)
-    pr_auc = result['pr_auc']
+    pr_auc = result["pr_auc"]
 
     # Random predictions should give moderate PR AUC
     assert 0.0 <= pr_auc <= 1.0
@@ -174,14 +178,12 @@ def test_calculate_pr_auc_for_matrices_random_predictions():
 def test_calculate_pr_auc_for_matrices_small_matrix():
     """Test with a small 2x2 matrix."""
     # 2 items, different classes
-    y_true = np.array([[1, 0],
-                       [0, 1]])
+    y_true = np.array([[1, 0], [0, 1]])
 
-    y_score = np.array([[1.0, 0.2],
-                        [0.2, 1.0]])
+    y_score = np.array([[1.0, 0.2], [0.2, 1.0]])
 
     result = calculate_precision_recall_auc_for_pairwise_score_matrix(y_true, y_score)
-    pr_auc = result['pr_auc']
+    pr_auc = result["pr_auc"]
 
     # For 2x2, only one off-diagonal element, so PR AUC should be 0 or 1
     # Since we have 0 in ground truth and 0.2 in score, it's a true negative
@@ -192,16 +194,12 @@ def test_calculate_pr_auc_for_matrices_small_matrix():
 def test_calculate_pr_auc_for_matrices_single_class():
     """Test with single class (all items same class) - should handle gracefully."""
     # All items are same class
-    y_true = np.array([[1, 1, 1],
-                       [1, 1, 1],
-                       [1, 1, 1]])
+    y_true = np.array([[1, 1, 1], [1, 1, 1], [1, 1, 1]])
 
-    y_score = np.array([[1.0, 0.8, 0.7],
-                        [0.8, 1.0, 0.6],
-                        [0.7, 0.6, 1.0]])
+    y_score = np.array([[1.0, 0.8, 0.7], [0.8, 1.0, 0.6], [0.7, 0.6, 1.0]])
 
     result = calculate_precision_recall_auc_for_pairwise_score_matrix(y_true, y_score)
-    pr_auc = result['pr_auc']
+    pr_auc = result["pr_auc"]
 
     # Should return a valid value (might be 0.0 if sklearn raises ValueError for single class)
     assert 0.0 <= pr_auc <= 1.0
@@ -210,16 +208,12 @@ def test_calculate_pr_auc_for_matrices_single_class():
 def test_calculate_pr_auc_for_matrices_all_zeros():
     """Test with all zeros in ground truth (no positive pairs)."""
     # All items are different classes
-    y_true = np.array([[1, 0, 0],
-                       [0, 1, 0],
-                       [0, 0, 1]])
+    y_true = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
 
-    y_score = np.array([[1.0, 0.5, 0.3],
-                        [0.5, 1.0, 0.4],
-                        [0.3, 0.4, 1.0]])
+    y_score = np.array([[1.0, 0.5, 0.3], [0.5, 1.0, 0.4], [0.3, 0.4, 1.0]])
 
     result = calculate_precision_recall_auc_for_pairwise_score_matrix(y_true, y_score)
-    pr_auc = result['pr_auc']
+    pr_auc = result["pr_auc"]
 
     # With no positive pairs in ground truth, should handle gracefully
     assert 0.0 <= pr_auc <= 1.0
@@ -228,19 +222,20 @@ def test_calculate_pr_auc_for_matrices_all_zeros():
 def test_calculate_pr_auc_for_matrices_inverted_predictions():
     """Test with inverted predictions - low scores for positive pairs, high for negative."""
     # Same setup as perfect predictions test
-    y_true = np.array([[1, 1, 0, 0],
-                       [1, 1, 0, 0],
-                       [0, 0, 1, 1],
-                       [0, 0, 1, 1]])
+    y_true = np.array([[1, 1, 0, 0], [1, 1, 0, 0], [0, 0, 1, 1], [0, 0, 1, 1]])
 
     # Inverted: low scores for same class, high scores for different
-    y_score = np.array([[1.0, 0.1, 0.9, 0.9],
-                        [0.1, 1.0, 0.9, 0.9],
-                        [0.9, 0.9, 1.0, 0.1],
-                        [0.9, 0.9, 0.1, 1.0]])
+    y_score = np.array(
+        [
+            [1.0, 0.1, 0.9, 0.9],
+            [0.1, 1.0, 0.9, 0.9],
+            [0.9, 0.9, 1.0, 0.1],
+            [0.9, 0.9, 0.1, 1.0],
+        ]
+    )
 
     result = calculate_precision_recall_auc_for_pairwise_score_matrix(y_true, y_score)
-    pr_auc = result['pr_auc']
+    pr_auc = result["pr_auc"]
 
     # Inverted predictions should give low PR AUC
     assert 0.0 <= pr_auc < 0.5
@@ -270,7 +265,7 @@ def test_calculate_pr_auc_for_matrices_larger_matrix():
                 y_score[i, j] = y_score[i, j] * 0.5
 
     result = calculate_precision_recall_auc_for_pairwise_score_matrix(y_true, y_score)
-    pr_auc = result['pr_auc']
+    pr_auc = result["pr_auc"]
 
     # Should give a reasonable PR AUC value
     assert 0.0 <= pr_auc <= 1.0
@@ -281,17 +276,19 @@ def test_calculate_pr_auc_for_matrices_larger_matrix():
 def test_calculate_pr_auc_for_matrices_ignores_diagonal():
     """Test that diagonal elements are ignored in the calculation."""
     # Create matrices where diagonal would affect result if included
-    y_true = np.array([[1, 1, 0],
-                       [1, 1, 0],
-                       [0, 0, 1]])
+    y_true = np.array([[1, 1, 0], [1, 1, 0], [0, 0, 1]])
 
     # Diagonal has wrong values, but should be ignored
-    y_score = np.array([[0.0, 0.9, 0.1],  # diagonal is 0.0 (wrong)
-                        [0.9, 0.0, 0.1],  # diagonal is 0.0 (wrong)
-                        [0.1, 0.1, 0.0]])  # diagonal is 0.0 (wrong)
+    y_score = np.array(
+        [
+            [0.0, 0.9, 0.1],  # diagonal is 0.0 (wrong)
+            [0.9, 0.0, 0.1],  # diagonal is 0.0 (wrong)
+            [0.1, 0.1, 0.0],
+        ]
+    )  # diagonal is 0.0 (wrong)
 
     result = calculate_precision_recall_auc_for_pairwise_score_matrix(y_true, y_score)
-    pr_auc = result['pr_auc']
+    pr_auc = result["pr_auc"]
 
     # Should still give reasonable result since diagonal is ignored
     assert 0.0 <= pr_auc <= 1.0
@@ -337,7 +334,9 @@ def test_calculate_cosine_similarity_matrix_vs_sklearn():
 
     # For zero vectors, cosine similarity should be 0 (or NaN in some cases)
     # Use a slightly larger tolerance for edge cases
-    np.testing.assert_allclose(result_ours_3, result_sklearn_3, rtol=1e-4, atol=1e-5, equal_nan=True)
+    np.testing.assert_allclose(
+        result_ours_3, result_sklearn_3, rtol=1e-4, atol=1e-5, equal_nan=True
+    )
 
     # Test case 4: Matrix with identical vectors (should give similarity of 1.0)
     embedding_matrix_4 = np.random.rand(1, 10).astype(np.float32)
@@ -352,7 +351,9 @@ def test_calculate_cosine_similarity_matrix_vs_sklearn():
     assert np.allclose(result_ours_4, 1.0, rtol=1e-5)
 
     # Test case 5: Orthogonal vectors (should give similarity close to 0.0)
-    embedding_matrix_5 = np.eye(5).astype(np.float32)  # Identity matrix (orthogonal unit vectors)
+    embedding_matrix_5 = np.eye(5).astype(
+        np.float32
+    )  # Identity matrix (orthogonal unit vectors)
 
     result_ours_5 = calculate_cosine_similarity_matrix(embedding_matrix_5)
     result_sklearn_5 = cosine_similarity(embedding_matrix_5)

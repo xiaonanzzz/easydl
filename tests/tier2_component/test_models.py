@@ -4,6 +4,7 @@ Tier 2 Component Tests: Model Components
 Tests for model forward passes and architecture.
 May require GPU for larger models.
 """
+
 import pytest
 import torch
 
@@ -19,8 +20,8 @@ class TestResnet18MetricModel:
         model = Resnet18MetricModel(embedding_dim=128)
 
         assert isinstance(model, torch.nn.Module)
-        assert hasattr(model, 'backbone')
-        assert hasattr(model, 'embedding')
+        assert hasattr(model, "backbone")
+        assert hasattr(model, "embedding")
 
     def test_forward_pass(self, sample_batch_tensor):
         """Test forward pass with batch of images."""
@@ -74,8 +75,8 @@ class TestResnet50MetricModel:
         model = Resnet50MetricModel(embedding_dim=128)
 
         assert isinstance(model, torch.nn.Module)
-        assert hasattr(model, 'backbone')
-        assert hasattr(model, 'embedding')
+        assert hasattr(model, "backbone")
+        assert hasattr(model, "embedding")
 
     def test_forward_pass(self, sample_batch_tensor):
         """Test forward pass with batch of images."""
@@ -106,7 +107,7 @@ class TestModelsOnGPU:
 
     def test_resnet18_on_gpu(self, device, sample_batch_tensor):
         """Test ResNet18 forward pass on GPU."""
-        if device.type != 'cuda':
+        if device.type != "cuda":
             pytest.skip("GPU not available")
 
         model = Resnet18MetricModel(embedding_dim=128).to(device)
@@ -117,12 +118,12 @@ class TestModelsOnGPU:
         with torch.no_grad():
             output = model(input_tensor)
 
-        assert output.device.type == 'cuda'
+        assert output.device.type == "cuda"
         assert output.shape == (8, 128)
 
     def test_resnet50_on_gpu(self, device, sample_batch_tensor):
         """Test ResNet50 forward pass on GPU."""
-        if device.type != 'cuda':
+        if device.type != "cuda":
             pytest.skip("GPU not available")
 
         model = Resnet50MetricModel(embedding_dim=128).to(device)
@@ -133,5 +134,5 @@ class TestModelsOnGPU:
         with torch.no_grad():
             output = model(input_tensor)
 
-        assert output.device.type == 'cuda'
+        assert output.device.type == "cuda"
         assert output.shape == (8, 128)

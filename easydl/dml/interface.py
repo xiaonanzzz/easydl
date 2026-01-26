@@ -1,9 +1,11 @@
 from typing import Callable, List
-from PIL import Image
+
 import numpy as np
+from PIL import Image
+
 
 class ImageTensorToEmbeddingTensorInterface:
-    
+
     def get_embedding_dim(self) -> int:
         raise NotImplementedError
 

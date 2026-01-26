@@ -1,14 +1,15 @@
-from tqdm.auto import tqdm
-from easydl.utils import AcceleratorSetting
-from torch.utils.data import DataLoader
-from easydl.utils import smart_torch_to_numpy
 import numpy as np
 import torch
+from torch.utils.data import DataLoader
+from tqdm.auto import tqdm
+
 from easydl.data import GenericLambdaDataset
-from easydl.dml.inferface import ImageTensorToEmbeddingTensorInterface
+from easydl.dml.interface import ImageTensorToEmbeddingTensorInterface
+from easydl.utils import AcceleratorSetting, smart_torch_to_numpy
+
 
 def infer_x_dataset_without_post_processing(dataset, model, batch_size=20):
-    assert dataset[0]['x'] is not None, "The dataset must have 'x' key"
+    assert dataset[0]["x"] is not None, "The dataset must have 'x' key"
 
     AcceleratorSetting.init()
 
@@ -21,23 +22,31 @@ def infer_x_dataset_without_post_processing(dataset, model, batch_size=20):
     progress_bar = tqdm(enumerate(dataloader), desc="Inferring", total=len(dataloader))
     for batch_idx, data in progress_bar:
         with torch.no_grad():
-            x_input = data['x']
+            x_input = data["x"]
             y_output = model(x_input)
             y_output_batch = smart_torch_to_numpy(y_output)
             y_output_batch_list.append(y_output_batch)
 
     return y_output_batch_list
 
+
 def infer_x_dataset_with_simple_stacking(*args, **kwargs):
     y_output_batch_list = infer_x_dataset_without_post_processing(*args, **kwargs)
     return np.concatenate(y_output_batch_list, axis=0)
 
-def infer_x_dataset_with_image_tensor_to_embedding_tensor_model(dataset, model, *args, **kwargs):
-    assert isinstance(model, ImageTensorToEmbeddingTensorInterface), "The model must be an instance of ImageTensorToEmbeddingTensorInterface"
-    assert isinstance(dataset, GenericLambdaDataset), "The dataset must be an instance of GenericLambdaDataset"
+
+def infer_x_dataset_with_image_tensor_to_embedding_tensor_model(
+    dataset, model, *args, **kwargs
+):
+    assert isinstance(
+        model, ImageTensorToEmbeddingTensorInterface
+    ), "The model must be an instance of ImageTensorToEmbeddingTensorInterface"
+    assert isinstance(
+        dataset, GenericLambdaDataset
+    ), "The dataset must be an instance of GenericLambdaDataset"
     # get the image transform function from the model
     image_transform = model.get_image_transform_function()
     # extend the dataset with the image transform function
-    dataset.extend_lambda_dict({'x': image_transform})
+    dataset.extend_lambda_dict({"x": image_transform})
     # infer the embeddings
     return infer_x_dataset_with_simple_stacking(dataset, model, *args, **kwargs)

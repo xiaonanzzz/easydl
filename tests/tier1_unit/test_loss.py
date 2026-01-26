@@ -3,6 +3,7 @@ Tier 1 Unit Tests: Loss Functions
 
 Fast tests for loss functions with synthetic data.
 """
+
 import pytest
 import torch
 import torch.nn.functional as F

@@ -3,14 +3,16 @@ Tier 1 Unit Tests: Inference Utilities
 
 Fast tests for inference functions with mocking.
 """
-import pytest
+
 import numpy as np
+import pytest
 
 from easydl.dml.infer import images_to_embeddings
 
 
 class DummyModel:
     """Dummy model for testing."""
+
     def __call__(self, image):
         return np.array([1.0, 2.0, 3.0])
 
@@ -28,7 +30,7 @@ class TestImagesToEmbeddings:
             return x
 
         model = DummyModel()
-        images = ['a', 'b', 'c']
+        images = ["a", "b", "c"]
         result = images_to_embeddings(images, model, image_reader=reader)
 
         assert called == images
@@ -37,13 +39,14 @@ class TestImagesToEmbeddings:
     def test_output_shape(self):
         """Test that output shape matches number of images."""
         model = DummyModel()
-        images = ['img1', 'img2', 'img3', 'img4']
+        images = ["img1", "img2", "img3", "img4"]
         result = images_to_embeddings(images, model, image_reader=lambda x: x)
 
         assert result.shape[0] == len(images)
 
     def test_embeddings_stacked_correctly(self):
         """Test that embeddings are stacked into correct array."""
+
         class SequentialModel:
             def __init__(self):
                 self.counter = 0
@@ -53,7 +56,7 @@ class TestImagesToEmbeddings:
                 return np.array([self.counter, self.counter * 2])
 
         model = SequentialModel()
-        images = ['a', 'b', 'c']
+        images = ["a", "b", "c"]
         result = images_to_embeddings(images, model, image_reader=lambda x: x)
 
         expected = np.array([[1, 2], [2, 4], [3, 6]])

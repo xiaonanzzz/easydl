@@ -1,16 +1,24 @@
-from tqdm import tqdm
-from easydl.utils import smart_print
 import torch
-from easydl.dml.pytorch_models import Resnet18MetricModel, EfficientNetMetricModel, VitMetricModel, Resnet50MetricModel
-from easydl.dml.loss import ProxyAnchorLoss, ArcFaceLoss
-from easydl.data import GenericPytorchDataset, GenericLambdaDataset
-from easydl.image import CommonImageToDlTensorForTraining, ImageToDlTensor
-from torch.utils.data import DataLoader
-from torch.optim import Adam
-from easydl.common_trainer import train_xy_model_for_epochs, train_xy_model_for_epochs_v2
-from easydl.utils import AcceleratorSetting
 from sklearn.preprocessing import LabelEncoder
-from easydl.dml.pytorch_models import DMLModelManager
+from torch.optim import Adam
+from torch.utils.data import DataLoader
+from tqdm import tqdm
+
+from easydl.common_trainer import (
+    train_xy_model_for_epochs,
+    train_xy_model_for_epochs_v2,
+)
+from easydl.data import GenericLambdaDataset, GenericPytorchDataset
+from easydl.dml.loss import ArcFaceLoss, ProxyAnchorLoss
+from easydl.dml.pytorch_models import (
+    DMLModelManager,
+    EfficientNetMetricModel,
+    Resnet18MetricModel,
+    Resnet50MetricModel,
+    VitMetricModel,
+)
+from easydl.image import CommonImageToDlTensorForTraining, ImageToDlTensor
+from easydl.utils import AcceleratorSetting, smart_print
 
 """
 This file contains training algorithms for training a model, in most of the algorithms, we use normalized names for data processing.
@@ -19,10 +27,20 @@ Usually, 'x' is a tensor of shape (batch_size, 3, 224, 224) and 'y' is a tensor 
 
 """
 
-def train_deep_metric_learning_image_model_ver777(model_name='resnet18', train_df=None, 
-loss_name='proxy_anchor_loss', embedding_dim=128, batch_size=256, device=None, num_epochs=100,
-default_model_weights_suffix='IMAGENET1K_V1',
-model_param_path=None, use_accelerator=False, lr=1e-4):
+
+def train_deep_metric_learning_image_model_ver777(
+    model_name="resnet18",
+    train_df=None,
+    loss_name="proxy_anchor_loss",
+    embedding_dim=128,
+    batch_size=256,
+    device=None,
+    num_epochs=100,
+    default_model_weights_suffix="IMAGENET1K_V1",
+    model_param_path=None,
+    use_accelerator=False,
+    lr=1e-4,
+):
     """
     config_dict is a dictionary that contains the configuration of the training process.
     It should contain the following keys:
@@ -50,39 +68,51 @@ model_param_path=None, use_accelerator=False, lr=1e-4):
         device = torch.device(device)
 
     assert train_df is not None, "train_df is required"
-    assert 'x' in train_df.columns and 'y' in train_df.columns, "train_df must contain 'x' and 'y' columns, and x is the path to the image"
+    assert (
+        "x" in train_df.columns and "y" in train_df.columns
+    ), "train_df must contain 'x' and 'y' columns, and x is the path to the image"
 
     # Model and Loss
     model, transform = None, None
-    if model_name == 'resnet18':
+    if model_name == "resnet18":
         model = Resnet18MetricModel(embedding_dim)
         transform = CommonImageToDlTensorForTraining()
 
-    if model_name == 'resnet50':
-        model = Resnet50MetricModel(embedding_dim, weights_suffix=default_model_weights_suffix)
+    if model_name == "resnet50":
+        model = Resnet50MetricModel(
+            embedding_dim, weights_suffix=default_model_weights_suffix
+        )
         transform = CommonImageToDlTensorForTraining()
 
-    if model_name.lower().startswith('efficientnet_b'):
+    if model_name.lower().startswith("efficientnet_b"):
         model_name = EfficientNetMetricModel.try_get_valid_model_name(model_name)
-        model = EfficientNetMetricModel(model_name=model_name, embedding_dim=embedding_dim)
+        model = EfficientNetMetricModel(
+            model_name=model_name, embedding_dim=embedding_dim
+        )
         transform = ImageToDlTensor(model.image_transform)
 
-    if model_name.lower().startswith('vit_'):
+    if model_name.lower().startswith("vit_"):
         model_name = VitMetricModel.try_get_valid_model_name(model_name)
-        model = VitMetricModel(model_name=model_name, embedding_dim=embedding_dim, weights_suffix=default_model_weights_suffix)
+        model = VitMetricModel(
+            model_name=model_name,
+            embedding_dim=embedding_dim,
+            weights_suffix=default_model_weights_suffix,
+        )
         transform = ImageToDlTensor(model.image_transform)
-    
+
     if model is None:
         raise ValueError(f"Model {model_name} is not supported")
 
-    dataset = GenericPytorchDataset(train_df[['x', 'y']], transforms={'x': lambda x: transform(x)})
+    dataset = GenericPytorchDataset(
+        train_df[["x", "y"]], transforms={"x": lambda x: transform(x)}
+    )
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
-    num_classes = len(train_df['y'].unique())
-    
-    if loss_name == 'proxy_anchor_loss':
+    num_classes = len(train_df["y"].unique())
+
+    if loss_name == "proxy_anchor_loss":
         loss_fn = ProxyAnchorLoss(num_classes=num_classes, embedding_dim=embedding_dim)
-    elif loss_name == 'arcface_loss':
+    elif loss_name == "arcface_loss":
         loss_fn = ArcFaceLoss(embedding_dim=embedding_dim, num_classes=num_classes)
     else:
         raise ValueError(f"Loss {loss_name} is not supported")
@@ -92,17 +122,21 @@ model_param_path=None, use_accelerator=False, lr=1e-4):
 
     if AcceleratorSetting.using_accelerator:
         accelerator = AcceleratorSetting.accelerator
-        model, optimizer, dataloader, loss_fn = accelerator.prepare(model, optimizer, dataloader, loss_fn)
+        model, optimizer, dataloader, loss_fn = accelerator.prepare(
+            model, optimizer, dataloader, loss_fn
+        )
 
     # Train
-    train_xy_model_for_epochs(model, dataloader, optimizer, loss_fn, device, num_epochs=num_epochs)
+    train_xy_model_for_epochs(
+        model, dataloader, optimizer, loss_fn, device, num_epochs=num_epochs
+    )
 
 
 class DeepMetricLearningImageTrainverV871:
-    # accelerator is required. 
+    # accelerator is required.
     @staticmethod
     def turn_df_to_x_y_loader(df):
-        return lambda x: df['x'][x], lambda x: df['y'][x], len(df)
+        return lambda x: df["x"][x], lambda x: df["y"][x], len(df)
 
     @staticmethod
     def transform_y_loader_to_encoded_y_list(y_loader, size_of_dataset) -> list[int]:
@@ -110,36 +144,76 @@ class DeepMetricLearningImageTrainverV871:
         y_encoder = LabelEncoder()
         y_encoder.fit(y_list)
         encoded_y_list = y_encoder.transform(y_list)
-        assert len(encoded_y_list) == size_of_dataset, "The length of the encoded y list must be the same as the size of the dataset"
+        assert (
+            len(encoded_y_list) == size_of_dataset
+        ), "The length of the encoded y list must be the same as the size of the dataset"
         return encoded_y_list
 
     @staticmethod
-    def train_resnet18_with_arcface_loss(x_loader, y_loader, size_of_dataset, embedding_dim=128, batch_size=256, num_epochs=10, lr=1e-4):
-        AcceleratorSetting.init()   
-        
+    def train_resnet18_with_arcface_loss(
+        x_loader,
+        y_loader,
+        size_of_dataset,
+        embedding_dim=128,
+        batch_size=256,
+        num_epochs=10,
+        lr=1e-4,
+    ):
+        AcceleratorSetting.init()
+
         model = Resnet18MetricModel(embedding_dim)
         transform = CommonImageToDlTensorForTraining()
 
-        encoded_y_list = DeepMetricLearningImageTrainverV871.transform_y_loader_to_encoded_y_list(y_loader, size_of_dataset)
+        encoded_y_list = (
+            DeepMetricLearningImageTrainverV871.transform_y_loader_to_encoded_y_list(
+                y_loader, size_of_dataset
+            )
+        )
         num_classes = len(set(encoded_y_list))
         smart_print(f"Number of classes: {num_classes}")
 
-        dataset = GenericLambdaDataset(lambda_dict={'x': lambda i: transform(x_loader(i)), 'y': lambda i: encoded_y_list[i]}, length=size_of_dataset)
+        dataset = GenericLambdaDataset(
+            lambda_dict={
+                "x": lambda i: transform(x_loader(i)),
+                "y": lambda i: encoded_y_list[i],
+            },
+            length=size_of_dataset,
+        )
         dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
-        
+
         loss_fn = ArcFaceLoss(embedding_dim=embedding_dim, num_classes=num_classes)
-        
+
         # Optimizer
         optimizer = Adam(list(model.parameters()) + list(loss_fn.parameters()), lr=lr)
-        
+
         accelerator = AcceleratorSetting.accelerator
-        model, optimizer, dataloader, loss_fn = accelerator.prepare(model, optimizer, dataloader, loss_fn)
+        model, optimizer, dataloader, loss_fn = accelerator.prepare(
+            model, optimizer, dataloader, loss_fn
+        )
 
         # Train
-        train_xy_model_for_epochs(model, dataloader, optimizer, loss_fn, accelerator.device, num_epochs=num_epochs)
+        train_xy_model_for_epochs(
+            model,
+            dataloader,
+            optimizer,
+            loss_fn,
+            accelerator.device,
+            num_epochs=num_epochs,
+        )
+
 
 class DeepMetricLearningImageTrainverV971:
-    def __init__(self, ds_train, number_of_classes, model_name='resnet18',loss_name="arcface_loss", embedding_dim=128, batch_size=256, num_epochs=10, lr=1e-4):
+    def __init__(
+        self,
+        ds_train,
+        number_of_classes,
+        model_name="resnet18",
+        loss_name="arcface_loss",
+        embedding_dim=128,
+        batch_size=256,
+        num_epochs=10,
+        lr=1e-4,
+    ):
         AcceleratorSetting.init()
 
         self.number_of_classes = number_of_classes
@@ -153,21 +227,30 @@ class DeepMetricLearningImageTrainverV971:
         model = self.get_model()
         dataloader = DataLoader(ds_train, batch_size=self.batch_size, shuffle=True)
         loss_fn = self.get_loss_fn()
-        optimizer = Adam(list(model.parameters()) + list(loss_fn.parameters()), lr=self.lr)
+        optimizer = Adam(
+            list(model.parameters()) + list(loss_fn.parameters()), lr=self.lr
+        )
 
-        model, optimizer, dataloader, loss_fn = AcceleratorSetting.prepare(model, optimizer, dataloader, loss_fn)
+        model, optimizer, dataloader, loss_fn = AcceleratorSetting.prepare(
+            model, optimizer, dataloader, loss_fn
+        )
 
         # Train it! Train it! Train it!
-        train_xy_model_for_epochs_v2(model, dataloader, optimizer, loss_fn, num_epochs=num_epochs)
+        train_xy_model_for_epochs_v2(
+            model, dataloader, optimizer, loss_fn, num_epochs=num_epochs
+        )
 
     def get_model(self):
         return DMLModelManager.get_model(self.model_name, self.embedding_dim)
 
-
     def get_loss_fn(self):
-        if self.loss_name == 'arcface_loss':
-            return ArcFaceLoss(embedding_dim=self.embedding_dim, num_classes=self.number_of_classes)
-        elif self.loss_name == 'proxy_anchor_loss':
-            return ProxyAnchorLoss(num_classes=self.number_of_classes, embedding_dim=self.embedding_dim)
+        if self.loss_name == "arcface_loss":
+            return ArcFaceLoss(
+                embedding_dim=self.embedding_dim, num_classes=self.number_of_classes
+            )
+        elif self.loss_name == "proxy_anchor_loss":
+            return ProxyAnchorLoss(
+                num_classes=self.number_of_classes, embedding_dim=self.embedding_dim
+            )
         else:
             raise ValueError(f"Loss {self.loss_name} is not supported")

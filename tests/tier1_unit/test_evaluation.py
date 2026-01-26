@@ -3,23 +3,21 @@ Tier 1 Unit Tests: Evaluation Metrics
 
 Fast tests for evaluation functions with synthetic data.
 """
-import pytest
+
 import numpy as np
 import pandas as pd
+import pytest
 
 from easydl.dml.evaluation import (
-    evaluate_embedding_top1_accuracy_ignore_self,
     calculate_cosine_similarity_matrix,
     create_pairwise_similarity_ground_truth_matrix,
+    evaluate_embedding_top1_accuracy_ignore_self,
 )
 
 
 def _create_embeddings_dataframe(embeddings, labels):
     """Helper to create dataframe from embeddings and labels."""
-    return pd.DataFrame({
-        'embedding': list(embeddings),
-        'label': labels
-    })
+    return pd.DataFrame({"embedding": list(embeddings), "label": labels})
 
 
 @pytest.mark.unit
@@ -34,14 +32,14 @@ class TestEvaluationMetrics:
 
         # Same-class items have identical embeddings
         for i, label in enumerate(labels):
-            embeddings[i, label * 20:(label + 1) * 20] = 1.0
+            embeddings[i, label * 20 : (label + 1) * 20] = 1.0
 
         # Normalize
         embeddings = embeddings / np.linalg.norm(embeddings, axis=1, keepdims=True)
 
         df = _create_embeddings_dataframe(embeddings, labels)
         result = evaluate_embedding_top1_accuracy_ignore_self(df)
-        accuracy = result['avg_top1_accuracy']
+        accuracy = result["avg_top1_accuracy"]
         assert accuracy == 1.0
 
     def test_random_embeddings_give_low_accuracy(self):
@@ -56,7 +54,7 @@ class TestEvaluationMetrics:
 
         df = _create_embeddings_dataframe(embeddings, labels)
         result = evaluate_embedding_top1_accuracy_ignore_self(df)
-        accuracy = result['avg_top1_accuracy']
+        accuracy = result["avg_top1_accuracy"]
 
         # Chance accuracy for 10 classes is ~10%
         assert 0.05 < accuracy < 0.25
@@ -68,7 +66,7 @@ class TestEvaluationMetrics:
 
         df = _create_embeddings_dataframe(embeddings, labels)
         result = evaluate_embedding_top1_accuracy_ignore_self(df)
-        accuracy = result['avg_top1_accuracy']
+        accuracy = result["avg_top1_accuracy"]
 
         assert 0.0 <= accuracy <= 1.0
 
@@ -127,13 +125,15 @@ class TestGroundTruthMatrix:
         labels = np.array([0, 0, 1, 1, 2])
         gt_matrix = create_pairwise_similarity_ground_truth_matrix(labels)
 
-        expected = np.array([
-            [1, 1, 0, 0, 0],
-            [1, 1, 0, 0, 0],
-            [0, 0, 1, 1, 0],
-            [0, 0, 1, 1, 0],
-            [0, 0, 0, 0, 1]
-        ])
+        expected = np.array(
+            [
+                [1, 1, 0, 0, 0],
+                [1, 1, 0, 0, 0],
+                [0, 0, 1, 1, 0],
+                [0, 0, 1, 1, 0],
+                [0, 0, 0, 0, 1],
+            ]
+        )
 
         np.testing.assert_array_equal(gt_matrix, expected)
 

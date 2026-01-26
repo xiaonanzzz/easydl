@@ -1,7 +1,8 @@
+import torch
 
 from easydl.reid.clip_reid_config import clip_reid_default_config
-import torch
 from easydl.reid.loss import SupConLoss
+
 
 def test_clip_reid_default_config_returns_cfgnode_clone():
     cfg = clip_reid_default_config()
@@ -37,4 +38,3 @@ def test_supconloss_forward_basic_cpu():
     assert isinstance(loss, torch.Tensor)
     assert loss.dim() == 0
     assert torch.isfinite(loss).item(), ("loss is not finite", loss)
-
