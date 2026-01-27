@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Callable
 
 import pandas as pd
 import torch
@@ -70,7 +70,7 @@ class GenericPytorchDataset(Dataset):
 class GenericLambdaDataset(Dataset):
 
     @staticmethod
-    def list_to_lambda_loader(list) -> callable:
+    def list_to_lambda_loader(list) -> Callable[[int], Any]:
         return lambda index: list[index]
 
     """

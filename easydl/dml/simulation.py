@@ -1,8 +1,10 @@
+from typing import Optional
+
 import numpy as np
 
 
 def generate_2d_gaussian_points(
-    N: int, mean: np.ndarray, cov: np.ndarray, random_seed: int = None
+    N: int, mean: np.ndarray, cov: np.ndarray, random_seed: Optional[int] = None
 ) -> np.ndarray:
     """
     Generate N random points from a 2D Gaussian distribution.

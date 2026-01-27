@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -326,7 +327,7 @@ class StandardEmbeddingEvaluationV1:
         self.test_dataset = test_dataset
         self.pairwise_similarity_ground_truth_matrix = (
             create_pairwise_similarity_ground_truth_matrix(
-                self.test_dataset.get_y_list_with_encoded_labels()
+                np.array(self.test_dataset.get_y_list_with_encoded_labels())
             )
         )
         self.save_pairwise_score_matrix_in_metric_dict = (
@@ -383,7 +384,7 @@ class DeepMetricLearningImageEvaluatorOnEachEpoch:
         embedding_dim: int,
         model_epoch_params_dir: str,
         num_epochs: int,
-        evaluation_report_dir: str = None,
+        evaluation_report_dir: Optional[str] = None,
     ):
         if evaluation_report_dir is None:
             evaluation_report_dir = ""

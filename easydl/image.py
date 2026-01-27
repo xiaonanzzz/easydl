@@ -1,4 +1,5 @@
 import base64
+import binascii
 import io
 import time
 from typing import Optional, Union
@@ -137,9 +138,9 @@ def smart_read_image(
     try:
         if image_str.startswith(("http://", "https://")):
             try:
-                response = requests.get(image_str, stream=True, timeout=10)
+                response = requests.get(image_str, timeout=10)
                 response.raise_for_status()  # Raise exception for HTTP errors
-                image = Image.open(response.raw)
+                image = Image.open(io.BytesIO(response.content))
             except requests.RequestException as e:
                 raise NetworkImageError(f"Failed to fetch image from URL: {e}")
             except Exception as e:
@@ -159,7 +160,7 @@ def smart_read_image(
                 base64_data = image_str.split("base64://", 1)[1]
                 image_data = base64.b64decode(base64_data)
                 image = Image.open(io.BytesIO(image_data))
-            except base64.binascii.Error as e:
+            except binascii.Error as e:
                 raise Base64ImageError(f"Invalid base64 encoding: {e}")
             except Exception as e:
                 raise Base64ImageError(f"Error decoding base64 image: {e}")
@@ -204,10 +205,10 @@ def smart_read_image(
                 raise FileImageError(f"Error opening image file: {e}")
 
         # Convert to RGB format
-        image = image.convert("RGB")
+        rgb_image: Image.Image = image.convert("RGB")
         if exif_transpose:
-            image = ImageOps.exif_transpose(image)
-        return image
+            rgb_image = ImageOps.exif_transpose(rgb_image)  # type: ignore[assignment]
+        return rgb_image
 
     except (NetworkImageError, FileImageError, Base64ImageError, S3ImageError) as e:
         # Re-raise specific exceptions for easier catching

@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Dict, List, Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -94,7 +94,7 @@ class PairwiseScoreAnalysisPlot:
 
         # Calculate histograms for each bin, grouped by ground truth (0 and 1)
         # First calculate raw counts
-        raw_counts = {0: [], 1: []}
+        raw_counts: Dict[int, List[int]] = {0: [], 1: []}
 
         for i in range(len(self.distribution_bins) - 1):
             bin_left = self.distribution_bins[i]
@@ -125,7 +125,7 @@ class PairwiseScoreAnalysisPlot:
 
         # Normalize to density for each group separately
         # Density = count / (total_count * bin_width) so that integral = 1
-        self.bin_histograms = {0: [], 1: []}
+        self.bin_histograms: Dict[int, List[float]] = {0: [], 1: []}
 
         # Get total counts for each group
         total_count_0 = np.sum(self.pairwise_gt_list == 0)

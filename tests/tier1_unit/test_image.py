@@ -69,9 +69,10 @@ class TestSmartReadImage:
     def test_read_http_url(self, mock_get):
         """Test reading from an HTTP URL with mocking."""
         mock_response = MagicMock()
-        mock_response.raw = io.BytesIO()
-        self.test_image.save(mock_response.raw, format="PNG")
-        mock_response.raw.seek(0)
+        # Save image to bytes buffer
+        img_buffer = io.BytesIO()
+        self.test_image.save(img_buffer, format="PNG")
+        mock_response.content = img_buffer.getvalue()
         mock_get.return_value = mock_response
 
         result = smart_read_image("http://example.com/image.png")

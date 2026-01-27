@@ -12,7 +12,7 @@ from pathlib import Path
 import numpy as np
 import torch
 
-from easydl.config import *
+from easydl.config import CommonCallbackConfig, SmartPrintConfig
 
 
 class AcceleratorSetting:

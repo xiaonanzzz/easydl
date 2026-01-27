@@ -49,6 +49,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Broken import in `tests/dml/test_evaluation.py`: changed `calculate_pr_auc_for_matrices` to `calculate_precision_recall_auc_for_pairwise_score_matrix`
 - Typo in filename: renamed `easydl/dml/inferface.py` to `easydl/dml/interface.py`
 - Updated imports in `easydl/common_infer.py` and `easydl/dml/hf_models.py` to use corrected module name
+- Type hint fixes for mypy compliance:
+  - `dml/simulation.py`: `random_seed: int = None` → `Optional[int] = None`
+  - `dml/evaluation.py`: `evaluation_report_dir: str = None` → `Optional[str] = None`
+  - `image.py`: Fixed `base64.binascii.Error` → `binascii.Error`
+  - `image.py`: Fixed HTTP response handling (`response.content` instead of `response.raw`)
+  - `visualization.py`: Added type annotations for dictionary variables
+  - `data.py`: `callable` → `Callable[[int], Any]`
+  - `utils.py`: Replaced wildcard import with explicit imports
 
 ### Changed
 - Applied `black` code formatting to all Python files (44 files reformatted)
