@@ -1,3 +1,23 @@
+"""
+PyTorch classification models for image classification tasks.
+
+This module provides wrapper classes and factory functions for creating
+pre-trained image classifiers, primarily focused on ImageNet classification.
+
+Classes:
+    ImagenetClassifierWrapper: Wrapper that combines a CNN model with
+        preprocessing and provides easy-to-use prediction methods.
+
+Functions:
+    create_imagenet_resnet18_classifier: Factory function to create a
+        ResNet18-based ImageNet classifier.
+
+Example:
+    >>> from easydl.clf.pytorch_models import create_imagenet_resnet18_classifier
+    >>> classifier = create_imagenet_resnet18_classifier()
+    >>> label, score = classifier.predict_label_with_confidence("path/to/image.jpg")
+    >>> print(f"Predicted: {label} with confidence {score:.2f}")
+"""
 import numpy as np
 import torch
 import torch.nn as nn

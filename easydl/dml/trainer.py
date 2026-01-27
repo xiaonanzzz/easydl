@@ -58,12 +58,12 @@ def train_deep_metric_learning_image_model_ver777(
     """
     if device is None:
         if use_accelerator:
-            print("Using accelerator ...")
+            smart_print("Using accelerator ...")
             AcceleratorSetting.init()
             device = AcceleratorSetting.device
         else:
             device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-            print(f"Not using accelerator, using device: {device}")
+            smart_print(f"Not using accelerator, using device: {device}")
     else:
         device = torch.device(device)
 

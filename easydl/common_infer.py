@@ -1,3 +1,21 @@
+"""
+Common inference utilities for deep learning models.
+
+This module provides functions for running batch inference on datasets
+using PyTorch models. It handles device management, batching, and
+progress tracking automatically.
+
+Functions:
+    infer_x_dataset_without_post_processing: Run inference and return raw batch outputs.
+    infer_x_dataset_with_simple_stacking: Run inference and concatenate all outputs.
+    infer_x_dataset_with_image_tensor_to_embedding_tensor_model: Run inference with
+        models implementing the ImageTensorToEmbeddingTensorInterface.
+
+Example:
+    >>> from easydl.common_infer import infer_x_dataset_with_simple_stacking
+    >>> embeddings = infer_x_dataset_with_simple_stacking(dataset, model, batch_size=32)
+    >>> print(f"Generated {len(embeddings)} embeddings")
+"""
 import numpy as np
 import torch
 from torch.utils.data import DataLoader
@@ -9,7 +27,8 @@ from easydl.utils import AcceleratorSetting, smart_torch_to_numpy
 
 
 def infer_x_dataset_without_post_processing(dataset, model, batch_size=20):
-    assert dataset[0]["x"] is not None, "The dataset must have 'x' key"
+    if dataset[0]["x"] is None:
+        raise ValueError("The dataset must have 'x' key with non-None values")
 
     AcceleratorSetting.init()
 

@@ -80,16 +80,16 @@ class TestSmartReadImage:
         """Test reading from an HTTP URL."""
         # Mock the requests.get response
         mock_response = MagicMock()
-        mock_response.raw = io.BytesIO()
-        self.test_image.save(mock_response.raw, format="PNG")
-        mock_response.raw.seek(0)  # Reset file pointer after writing
+        img_buffer = io.BytesIO()
+        self.test_image.save(img_buffer, format="PNG")
+        mock_response.content = img_buffer.getvalue()
         mock_get.return_value = mock_response
 
         result = smart_read_image("http://example.com/image.png")
 
         # Check that requests.get was called correctly
         mock_get.assert_called_once_with(
-            "http://example.com/image.png", stream=True, timeout=10
+            "http://example.com/image.png", timeout=10
         )
         assert isinstance(result, Image.Image)
         assert result.mode == "RGB"

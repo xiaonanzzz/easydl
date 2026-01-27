@@ -13,35 +13,29 @@ A Python package for easy deep learning.
 
 You can install the package using pip with different dependency sets depending on your needs:
 
-### Basic Installation (minimal dependencies)
+### Basic Installation
 ```bash
 pip install git+https://github.com/xiaonanzzz/easydl.git
 ```
-This installs only the base package with minimal dependencies (numpy).
+This installs the base package with all core dependencies needed for training and inference (torch, torchvision, pillow, scikit-learn, pandas, etc.).
 
-### Core Installation (image processing utilities)
+### Research Installation (additional research tools)
 ```bash
-pip install "git+https://github.com/xiaonanzzz/easydl.git[core]"
+pip install "git+https://github.com/xiaonanzzz/easydl.git[research]"
 ```
-Includes core utilities for image processing (pillow, requests, pillow-heif).
-
-### Inference Installation (for running models)
-```bash
-pip install "git+https://github.com/xiaonanzzz/easydl.git[infer]"
-```
-Includes everything needed for model inference (torch, torchvision, transformers). Automatically includes `core` dependencies.
-
-### Training Installation (for training models)
-```bash
-pip install "git+https://github.com/xiaonanzzz/easydl.git[train]"
-```
-Includes everything needed for training models (tqdm, scikit-learn, pandas, boto3). Automatically includes `infer` and `core` dependencies.
+Includes additional tools for research workflows: datasets, timm, plotly, and nbformat.
 
 ### Development Installation
 ```bash
 pip install -e ".[dev]"
 ```
-Includes all dependencies plus development tools (pytest, black, isort, mypy).
+Includes development tools: pytest, black, isort, and mypy.
+
+### Full Installation (all features)
+```bash
+pip install "git+https://github.com/xiaonanzzz/easydl.git[all]"
+```
+Includes all dependencies (base + research + dev).
 
 
 

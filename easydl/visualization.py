@@ -9,6 +9,7 @@ from seaborn import histplot
 from sklearn.metrics import auc, precision_recall_curve
 
 from easydl.numpyext import get_upper_triangle_values
+from easydl.utils import smart_print
 
 
 def plot_precision_recall_vs_threshold_curve(
@@ -17,7 +18,7 @@ def plot_precision_recall_vs_threshold_curve(
     """
     Visualize the Precision-Recall Curve.
     """
-    print(len(threshold_list), len(precision_list), len(recall_list))
+    smart_print(len(threshold_list), len(precision_list), len(recall_list))
     df = pd.DataFrame(
         {
             "threshold": threshold_list,

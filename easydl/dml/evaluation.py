@@ -16,6 +16,7 @@ from easydl.dml.pytorch_models import DMLModelManager
 from easydl.utils import (
     AcceleratorSetting,
     smart_any_to_torch_tensor,
+    smart_print,
     torch_load_with_prefix_removal,
 )
 
@@ -101,10 +102,10 @@ def evaluate_pairwise_score_matrix_with_true_label(
         - 'pr_auc': The Precision-Recall AUC score (float between 0.0 and 1.0)
     """
     n = y_true_matrix.shape[0]
-    assert y_score_matrix.shape == (
-        n,
-        n,
-    ), f"Shape mismatch: y_true_matrix is {y_true_matrix.shape}, y_score_matrix is {y_score_matrix.shape}"
+    if y_score_matrix.shape != (n, n):
+        raise ValueError(
+            f"Shape mismatch: y_true_matrix is {y_true_matrix.shape}, y_score_matrix is {y_score_matrix.shape}"
+        )
 
     # Calculate 1NN accuracy ignoring itself
     # For each row, find the index with the highest score (excluding diagonal/itself)
@@ -179,7 +180,7 @@ def calculate_precision_recall_auc_for_pairwise_score_matrix(
 
     # Check for empty or singular data which would cause errors
     if len(y_true_flattened) == 0:
-        print(
+        smart_print(
             "Error: Input matrices are too small or empty after filtering the diagonal."
         )
         return {
@@ -400,7 +401,7 @@ class DeepMetricLearningImageEvaluatorOnEachEpoch:
             model_file_name = model_file_default_name_given_epoch(epoch)
             model_path = os.path.join(model_epoch_params_dir, model_file_name)
             if not os.path.exists(model_path):
-                print(
+                smart_print(
                     f"Model file {model_path} does not exist, skipping evaluation for epoch {epoch}"
                 )
                 continue
@@ -415,7 +416,7 @@ class DeepMetricLearningImageEvaluatorOnEachEpoch:
                 }
             )
         if len(results_summary_of_each_epoch) == 0:
-            print(
+            smart_print(
                 "No model files found in the model_epoch_params_dir, skipping evaluation"
             )
             return

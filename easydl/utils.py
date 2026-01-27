@@ -136,7 +136,7 @@ def smart_any_to_torch_tensor(any_obj) -> torch.Tensor:
     return torch.tensor(any_obj)
 
 
-def smart_print(*messages: str):
+def smart_print(*messages: object):
     """
     This is a smart print function which will print the message, and log it to a file if the experiment is configured to do so.
     """

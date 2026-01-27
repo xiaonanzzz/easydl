@@ -1,3 +1,20 @@
+"""
+ImageNet-1K class label mappings.
+
+This module provides the mapping from ImageNet-1K class indices (0-999)
+to their human-readable class names. These labels correspond to the
+standard ImageNet Large Scale Visual Recognition Challenge (ILSVRC)
+1000-class classification task.
+
+Constants:
+    IMAGE_NET_1K_LABEL_MAP: Dictionary mapping class index (int) to
+        class name (str). Contains all 1000 ImageNet classes.
+
+Example:
+    >>> from easydl.clf.image_net import IMAGE_NET_1K_LABEL_MAP
+    >>> print(IMAGE_NET_1K_LABEL_MAP[0])  # 'tench, Tinca tinca'
+    >>> print(IMAGE_NET_1K_LABEL_MAP[207])  # 'golden retriever'
+"""
 IMAGE_NET_1K_LABEL_MAP = {
     0: "tench, Tinca tinca",
     1: "goldfish, Carassius auratus",

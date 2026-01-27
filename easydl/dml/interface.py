@@ -1,3 +1,22 @@
+"""
+Interface definitions for deep metric learning models.
+
+This module provides abstract base classes that define the interface for
+image embedding models. These interfaces ensure consistent APIs across
+different model implementations (ResNet, EfficientNet, ViT, etc.).
+
+Classes:
+    ImageTensorToEmbeddingTensorInterface: Abstract interface for models that
+        convert images to embedding vectors.
+
+Example:
+    >>> class MyEmbeddingModel(ImageTensorToEmbeddingTensorInterface):
+    ...     def get_embedding_dim(self) -> int:
+    ...         return 128
+    ...     def embed_image(self, image: Image.Image) -> np.ndarray:
+    ...         # Implementation here
+    ...         pass
+"""
 from typing import Callable, List
 
 import numpy as np

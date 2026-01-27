@@ -18,7 +18,7 @@ from easydl.image import (
     smart_read_image_v2,
 )
 from easydl.model_wrapper import ImageModelWrapper
-from easydl.utils import smart_torch_to_numpy, torch_load_with_prefix_removal
+from easydl.utils import smart_print, smart_torch_to_numpy, torch_load_with_prefix_removal
 
 
 class PytorchConfig:
@@ -184,7 +184,8 @@ class Resnet18MetricModel(nn.Module):
         image = smart_read_image_v2(image)
         x = COMMON_IMAGE_PREPROCESSING_FOR_TESTING(image)
         x = x.unsqueeze(0)
-        assert x.ndim == 4, f"ndim should be 4, but got {x.ndim}, x.shape: {x.shape}"
+        if x.ndim != 4:
+            raise ValueError(f"ndim should be 4, but got {x.ndim}, x.shape: {x.shape}")
 
         # assuming the model is a torch tensor to tensor model
         self.eval()
@@ -207,19 +208,9 @@ class Resnet50MetricModel(nn.Module):
             embedding_dim=embedding_dim, weights_suffix="IMAGENET1K_V1"
         )
         if model_param_path:
-            try:
-                image_model.load_state_dict(
-                    torch_load_with_prefix_removal(model_param_path)
-                )
-            except Exception as e:
-                print(f"Error loading model: {e}")
-                print(
-                    f"Trying to load model from {model_param_path} with prefix removal"
-                )
-                image_model.load_state_dict(
-                    torch_load_with_prefix_removal(model_param_path)
-                )
-                print(f"Model loaded successfully")
+            image_model.load_state_dict(
+                torch_load_with_prefix_removal(model_param_path)
+            )
         image_model = ImageModelWrapper(image_model, image_model.image_transform)
         return image_model
 
@@ -227,9 +218,10 @@ class Resnet50MetricModel(nn.Module):
         # embedding dim is the dimension of the embedding space, if it is set to 128, the output of the model will be a 128-dimensional vector for each input image.
 
         super().__init__()
-        assert (
-            weights_suffix in self.valid_weights_suffixes
-        ), f"Invalid weights suffix: {weights_suffix}. Valid weights suffixes are: {self.valid_weights_suffixes}"
+        if weights_suffix not in self.valid_weights_suffixes:
+            raise ValueError(
+                f"Invalid weights suffix: {weights_suffix}. Valid weights suffixes are: {self.valid_weights_suffixes}"
+            )
         weights_name = f"ResNet50_Weights.{weights_suffix}"
         backbone = resnet50(weights=weights_name)
         self.backbone = backbone
@@ -283,7 +275,8 @@ class Resnet50MetricModel(nn.Module):
         image = smart_read_image_v2(image)
         x = COMMON_IMAGE_PREPROCESSING_FOR_TESTING(image)
         x = x.unsqueeze(0)
-        assert x.ndim == 4, f"ndim should be 4, but got {x.ndim}, x.shape: {x.shape}"
+        if x.ndim != 4:
+            raise ValueError(f"ndim should be 4, but got {x.ndim}, x.shape: {x.shape}")
 
         # assuming the model is a torch tensor to tensor model
         self.eval()
@@ -357,14 +350,14 @@ class VitMetricModel(nn.Module):
                     torch.load(model_param_path, map_location=torch.device("cpu"))
                 )
             except Exception as e:
-                print(f"Error loading model: {e}")
-                print(
+                smart_print(f"Error loading model: {e}")
+                smart_print(
                     f"Trying to load model from {model_param_path} with prefix removal"
                 )
                 image_model.load_state_dict(
                     torch_load_with_prefix_removal(model_param_path)
                 )
-                print(f"Model loaded successfully")
+                smart_print(f"Model loaded successfully")
         image_model = ImageModelWrapper(image_model, image_model.image_transform)
         return image_model
 

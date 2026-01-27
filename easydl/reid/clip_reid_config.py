@@ -1,3 +1,27 @@
+"""
+CLIP-ReID configuration module.
+
+This module provides configuration settings for CLIP-based person re-identification
+(ReID) models. It uses YACS (Yet Another Configuration System) for managing
+hierarchical configuration with support for YAML files.
+
+The configuration covers:
+    - MODEL: Backbone architecture, device settings, loss configurations
+    - INPUT: Image size, augmentation parameters, normalization values
+    - DATASETS: Dataset names and root directories
+    - DATALOADER: Batch size, number of workers, sampling strategy
+    - SOLVER: Optimizer settings, learning rates, warmup schedules
+    - TEST: Evaluation settings, re-ranking options
+
+Functions:
+    clip_reid_default_config: Returns a clone of the default configuration.
+
+Example:
+    >>> from easydl.reid.clip_reid_config import clip_reid_default_config
+    >>> cfg = clip_reid_default_config()
+    >>> cfg.MODEL.NAME = 'resnet50'
+    >>> cfg.SOLVER.STAGE1.BASE_LR = 1e-4
+"""
 from easydl.config import CfgNode as CN
 
 # -----------------------------------------------------------------------------
