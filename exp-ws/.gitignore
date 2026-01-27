@@ -1,0 +1,53 @@
+# Experiment workspace gitignore
+# Keep this directory clean - only track templates and docs
+
+# Model files
+*.pth
+*.pt
+*.ckpt
+*.bin
+*.safetensors
+
+# Data files
+*.pkl
+*.pickle
+*.npy
+*.npz
+*.h5
+*.hdf5
+*.csv
+*.json
+!README.md
+
+# Datasets
+data/
+datasets/
+
+# Outputs
+outputs/
+results/
+logs/
+checkpoints/
+
+# Experiment tracking
+wandb/
+mlruns/
+tensorboard/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# Images (except small samples)
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.bmp
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+__pycache__/
+.cache/

@@ -175,3 +175,13 @@ cython_debug/
 adhoc-test/
 examples/tmp/
 .vscode/
+
+# Experiment workspace outputs (keep templates/docs)
+exp-ws/*.pth
+exp-ws/*.pt
+exp-ws/*.pkl
+exp-ws/*.npy
+exp-ws/data/
+exp-ws/outputs/
+exp-ws/logs/
+exp-ws/wandb/

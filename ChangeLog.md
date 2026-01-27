@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `dev-setup/` directory with development environment scripts:
+  - `setup-dev.sh` - Main setup script for creating venv and installing dependencies
+  - `install-hooks.sh` - Pre-commit hooks installation
+  - `run-tests.sh` - Test runner with tier selection options
+- `exp-ws/` experiment workspace for development and debugging:
+  - Template experiment file
+  - Dedicated `.gitignore` for experiment outputs
 - Tiered test structure with four levels:
   - `tier1_unit/` - Fast unit tests (<1s)
   - `tier2_component/` - Component tests (<30s)
