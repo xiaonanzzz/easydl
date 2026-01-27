@@ -37,6 +37,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `refine.md` - Codebase analysis and recommendations
   - `dev-design-v1.0.md` - Development design document
   - `test-design-v1.0.md` - Test strategy document
+  - `development.md` - Developer/contributor guide
+- Example scripts in `examples/`:
+  - `01_quick_start.py` - Basic inference with metric learning models
+  - `02_extract_embeddings.py` - Extract embeddings from images
+  - `03_find_similar_images.py` - Find similar images using embeddings
+  - `04_train_metric_model.py` - Train a metric learning model
+  - `README.md` - Examples documentation
 
 ### Fixed
 - Broken import in `tests/dml/test_evaluation.py`: changed `calculate_pr_auc_for_matrices` to `calculate_precision_recall_auc_for_pairwise_score_matrix`
@@ -46,3 +53,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Applied `black` code formatting to all Python files (44 files reformatted)
 - Applied `isort` import sorting to all Python files
+- Switched to `uv` for virtual environment management
+- Virtual environments now stored in `venvs/` directory (instead of `.venv`)
+- Updated `pyproject.toml` with explicit package discovery to exclude non-package directories
