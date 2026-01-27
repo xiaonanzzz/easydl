@@ -1,6 +1,6 @@
 # Development Setup
 
-Scripts and tools for setting up the EasyDL development environment.
+Scripts and tools for setting up the EasyDL development environment using [uv](https://github.com/astral-sh/uv).
 
 ## Quick Start
 
@@ -10,15 +10,16 @@ Scripts and tools for setting up the EasyDL development environment.
 ```
 
 This will:
-1. Create a Python virtual environment (`.venv/`)
-2. Install the package in development mode with all dependencies
-3. Set up pre-commit hooks (if available)
+1. Install `uv` if not already installed
+2. Create a Python virtual environment (`venvs/dev/`)
+3. Install the package in development mode with all dependencies
+4. Set up pre-commit hooks (if available)
 
 ## Scripts
 
 | Script | Description |
 |--------|-------------|
-| `setup-dev.sh` | Main setup script - creates venv and installs dependencies |
+| `setup-dev.sh` | Main setup script - creates venv with uv and installs dependencies |
 | `install-hooks.sh` | Installs git pre-commit hooks for code quality |
 | `run-tests.sh` | Test runner with tier selection |
 
@@ -43,15 +44,19 @@ This will:
 If you prefer manual setup:
 
 ```bash
+# Install uv if not already installed
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
 # Create virtual environment
-python3 -m venv .venv
-source .venv/bin/activate
+mkdir -p venvs
+uv venv venvs/dev --python 3.9
+source venvs/dev/bin/activate
 
 # Install in development mode
-pip install -e ".[dev]"
+uv pip install -e ".[dev]"
 
 # Install pre-commit hooks
-pip install pre-commit
+uv pip install pre-commit
 pre-commit install
 ```
 
@@ -85,6 +90,6 @@ Recommended extensions (install via Extensions panel):
 
 ### PyCharm
 
-1. Set interpreter to `.venv/bin/python`
+1. Set interpreter to `venvs/dev/bin/python`
 2. Enable Black as external tool
 3. Enable isort on save

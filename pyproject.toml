@@ -65,6 +65,10 @@ all = [
 [project.urls]
 Homepage = "https://github.com/xiaonanzzz/easydl"
 
+[tool.setuptools.packages.find]
+include = ["easydl*"]
+exclude = ["tests*", "venvs*", "exp-ws*", "dev-setup*", "examples*"]
+
 [tool.black]
 line-length = 88
 target-version = ['py37', 'py38', 'py39', 'py310']
@@ -72,4 +76,4 @@ include = '\.pyi?$'
 
 [tool.isort]
 profile = "black"
-multi_line_output = 3 
+multi_line_output = 3
