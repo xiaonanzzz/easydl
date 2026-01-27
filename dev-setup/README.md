@@ -20,8 +20,22 @@ This will:
 | Script | Description |
 |--------|-------------|
 | `setup-dev.sh` | Main setup script - creates venv with uv and installs dependencies |
+| `activate.sh` | Activate the development environment (must be sourced) |
 | `install-hooks.sh` | Installs git pre-commit hooks for code quality |
 | `run-tests.sh` | Test runner with tier selection |
+
+## Activating the Environment
+
+After setup, activate the environment:
+
+```bash
+source dev-setup/activate.sh
+```
+
+This will:
+- Activate the virtual environment at `venvs/dev/`
+- Show Python version and quick commands
+- Works from any directory (as long as you reference the script correctly)
 
 ## Running Tests
 
