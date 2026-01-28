@@ -56,10 +56,18 @@ dev = [
     "mypy>=0.900",
 ]
 
+# Documentation tools
+docs = [
+    "mkdocs>=1.5",
+    "mkdocs-material>=9.0",
+    "mkdocstrings[python]>=0.24",
+]
+
 # All features combined
 all = [
     "easydl[dev]",
     "easydl[research]",
+    "easydl[docs]",
 ]
 
 [project.urls]

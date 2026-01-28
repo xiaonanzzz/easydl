@@ -1,0 +1,83 @@
+site_name: EasyDL
+site_description: A Python package for easy deep learning
+site_url: https://xiaonanzzz.github.io/easydl
+repo_url: https://github.com/xiaonanzzz/easydl
+repo_name: xiaonanzzz/easydl
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.highlight
+    - search.suggest
+    - content.code.copy
+    - content.code.annotate
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            docstring_style: google
+            show_source: true
+            show_root_heading: true
+            show_root_full_path: false
+            show_symbol_type_heading: true
+            show_symbol_type_toc: true
+            members_order: source
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - admonition
+  - pymdownx.details
+  - tables
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Getting Started:
+    - Installation: getting-started/installation.md
+    - Quick Start: getting-started/quick-start.md
+  - User Guide:
+    - Image Loading: user-guide/image-loading.md
+    - Deep Metric Learning: user-guide/metric-learning.md
+    - Training Models: user-guide/training.md
+    - Datasets: user-guide/datasets.md
+  - API Reference:
+    - Overview: api/index.md
+    - easydl.data: api/data.md
+    - easydl.image: api/image.md
+    - easydl.dml: api/dml.md
+    - easydl.clf: api/clf.md
+    - easydl.common_trainer: api/common_trainer.md
+    - easydl.common_infer: api/common_infer.md
+  - Examples: examples.md
+  - Changelog: changelog.md
+
+extra:
+  version:
+    provider: mike
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/xiaonanzzz/easydl
