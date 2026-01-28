@@ -7,7 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-01-28
+
 ### Added
+- **CI/CD Infrastructure**:
+  - GitHub Actions workflow (`.github/workflows/ci.yml`) for automated linting, testing, and documentation builds
+  - Pre-commit hooks configuration (`.pre-commit-config.yaml`) for local code quality enforcement
+- **Documentation Site** (MkDocs with Material theme):
+  - Full API reference auto-generated from docstrings
+  - User guides: Installation, Quick Start, Image Loading, Metric Learning, Training, Datasets
+  - Examples page with code snippets
+  - Changelog page
+  - Documentation dependencies added to `pyproject.toml` (`[docs]` extra)
 - Module docstrings for all public modules:
   - `dml/interface.py` - Interface definitions for embedding models
   - `clf/pytorch_models.py` - Classification model wrappers

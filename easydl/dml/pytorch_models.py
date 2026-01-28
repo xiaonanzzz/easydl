@@ -18,7 +18,11 @@ from easydl.image import (
     smart_read_image_v2,
 )
 from easydl.model_wrapper import ImageModelWrapper
-from easydl.utils import smart_print, smart_torch_to_numpy, torch_load_with_prefix_removal
+from easydl.utils import (
+    smart_print,
+    smart_torch_to_numpy,
+    torch_load_with_prefix_removal,
+)
 
 
 class PytorchConfig:

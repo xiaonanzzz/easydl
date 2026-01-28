@@ -22,6 +22,7 @@ Example:
     >>> cfg.MODEL.NAME = 'resnet50'
     >>> cfg.SOLVER.STAGE1.BASE_LR = 1e-4
 """
+
 from easydl.config import CfgNode as CN
 
 # -----------------------------------------------------------------------------

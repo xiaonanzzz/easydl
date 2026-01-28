@@ -88,9 +88,7 @@ class TestSmartReadImage:
         result = smart_read_image("http://example.com/image.png")
 
         # Check that requests.get was called correctly
-        mock_get.assert_called_once_with(
-            "http://example.com/image.png", timeout=10
-        )
+        mock_get.assert_called_once_with("http://example.com/image.png", timeout=10)
         assert isinstance(result, Image.Image)
         assert result.mode == "RGB"
 

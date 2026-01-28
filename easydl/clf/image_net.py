@@ -15,6 +15,7 @@ Example:
     >>> print(IMAGE_NET_1K_LABEL_MAP[0])  # 'tench, Tinca tinca'
     >>> print(IMAGE_NET_1K_LABEL_MAP[207])  # 'golden retriever'
 """
+
 IMAGE_NET_1K_LABEL_MAP = {
     0: "tench, Tinca tinca",
     1: "goldfish, Carassius auratus",

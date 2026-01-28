@@ -17,6 +17,7 @@ Example:
     ...         # Implementation here
     ...         pass
 """
+
 from typing import Callable, List
 
 import numpy as np

@@ -16,6 +16,7 @@ Example:
     >>> embeddings = infer_x_dataset_with_simple_stacking(dataset, model, batch_size=32)
     >>> print(f"Generated {len(embeddings)} embeddings")
 """
+
 import numpy as np
 import torch
 from torch.utils.data import DataLoader

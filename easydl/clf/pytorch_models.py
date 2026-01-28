@@ -18,6 +18,7 @@ Example:
     >>> label, score = classifier.predict_label_with_confidence("path/to/image.jpg")
     >>> print(f"Predicted: {label} with confidence {score:.2f}")
 """
+
 import numpy as np
 import torch
 import torch.nn as nn

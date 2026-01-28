@@ -17,6 +17,7 @@ Example:
     >>> values = get_upper_triangle_values(matrix)
     >>> print(values)  # [2, 3, 6]
 """
+
 import numpy as np
 
 
