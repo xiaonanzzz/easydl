@@ -4,12 +4,12 @@ A Python package for easy deep learning.
 
 # Design Principles
 
-* **Three lines P99**: P99 use cases can be done with less than 3 lines of code: One line for prepare input, one line for run, one line for show the output.
+* **Three lines P99**: P99 use cases can be done with less than 3 lines of code: 1) Prepare the model or function; 2) prepare the input; 3) run it.
 * **Smart handling**: All possible edge cases should be handled without bothering the user of the function. 
 * **Plug-in flesible**: Any one can easily copy and paste the code and make some modifications to implement their idea.
 
 ## Use cases design
-* Use a pretrained model for image classification use cases.
+* Use a pretrained model for image classification use cases. See example 01.
 * Use
 
 
