@@ -157,9 +157,9 @@ def exp_dir(tmp_path):
 # ============== Dataset Fixtures (Lazy Loading) ==============
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def cub_train_small():
-    """Small CUB training dataset (cached for session)."""
+    """Small CUB training dataset."""
     try:
         from easydl.public_dataset.cub import (
             get_small_train_dataset_with_image_and_encoded_labels,
@@ -170,9 +170,9 @@ def cub_train_small():
         pytest.skip("CUB dataset not available")
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def cub_test_small():
-    """Small CUB test dataset (cached for session)."""
+    """Small CUB test dataset."""
     try:
         from easydl.public_dataset.cub import (
             get_small_train_dataset_with_image_and_encoded_labels,

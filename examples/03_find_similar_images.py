@@ -23,7 +23,10 @@ from easydl.image import COMMON_IMAGE_PREPROCESSING_FOR_TESTING, smart_read_imag
 def main():
     # Sample images with descriptions
     images = [
-        ("https://images.pexels.com/photos/406014/pexels-photo-406014.jpeg", "Beagle dog"),
+        (
+            "https://images.pexels.com/photos/406014/pexels-photo-406014.jpeg",
+            "Beagle dog",
+        ),
         (
             "https://images.pexels.com/photos/45201/kitty-cat-kitten-pet-45201.jpeg",
             "Orange cat",
@@ -80,7 +83,9 @@ def main():
         similarity_score = sim_scores[most_similar_idx]
 
         print(f"{descriptions[i]}")
-        print(f"  -> Most similar: {descriptions[most_similar_idx]} (score: {similarity_score:.4f})")
+        print(
+            f"  -> Most similar: {descriptions[most_similar_idx]} (score: {similarity_score:.4f})"
+        )
         print()
 
     # Print full similarity matrix

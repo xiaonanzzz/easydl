@@ -16,18 +16,25 @@ from pathlib import Path
 
 import torch
 
+from easydl.config import CommonCallbackConfig
 from easydl.dml.pytorch_models import Resnet18MetricModel
 from easydl.dml.trainer import DeepMetricLearningImageTrainverV971
 from easydl.image import COMMON_IMAGE_PREPROCESSING_FOR_TRAINING
-from easydl.public_dataset.cub import get_small_train_dataset_with_image_and_encoded_labels
-from easydl.config import CommonCallbackConfig
+from easydl.public_dataset.cub import (
+    get_small_train_dataset_with_image_and_encoded_labels,
+)
+
 
 def main():
     # check if the current working directory is the easydl root directory
     if os.path.basename(os.getcwd()) != "easydl":
-        print("Warning: You are not in the easydl root directory. You might not be able to run the script properly.")
+        print(
+            "Warning: You are not in the easydl root directory. You might not be able to run the script properly."
+        )
         print("Current working directory: ", os.getcwd())
-        print("Example: source .venv/bin/activate && python examples/04_train_metric_model.py")
+        print(
+            "Example: source .venv/bin/activate && python examples/04_train_metric_model.py"
+        )
         return
 
     print("=" * 60)
@@ -43,7 +50,9 @@ def main():
 
     # Create dataset
     print("\n1. Loading CUB dataset...")
-    ds_train = get_small_train_dataset_with_image_and_encoded_labels(num_samples=num_samples)
+    ds_train = get_small_train_dataset_with_image_and_encoded_labels(
+        num_samples=num_samples
+    )
     ds_train.extend_lambda_dict({"x": COMMON_IMAGE_PREPROCESSING_FOR_TRAINING})
     print(f"   Samples: {len(ds_train)}, Classes: {ds_train.get_number_of_classes()}")
 

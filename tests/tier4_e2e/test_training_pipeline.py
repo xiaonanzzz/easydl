@@ -35,7 +35,7 @@ class TestTrainingPipeline:
         try:
             DeepMetricLearningImageTrainverV971(
                 ds_train,
-                num_classes=ds_train.get_number_of_classes(),
+                number_of_classes=ds_train.get_number_of_classes(),
                 model_name="resnet18",
                 loss_name="proxy_anchor_loss",
                 embedding_dim=128,
@@ -59,7 +59,7 @@ class TestTrainingPipeline:
         try:
             DeepMetricLearningImageTrainverV971(
                 ds_train,
-                num_classes=ds_train.get_number_of_classes(),
+                number_of_classes=ds_train.get_number_of_classes(),
                 model_name="resnet18",
                 loss_name="proxy_anchor_loss",
                 embedding_dim=128,
@@ -86,7 +86,7 @@ class TestTrainingPipeline:
         try:
             DeepMetricLearningImageTrainverV971(
                 ds_train,
-                num_classes=ds_train.get_number_of_classes(),
+                number_of_classes=ds_train.get_number_of_classes(),
                 model_name="resnet18",
                 loss_name="proxy_anchor_loss",
                 embedding_dim=128,
@@ -133,7 +133,7 @@ class TestTrainingOnGPU:
         try:
             DeepMetricLearningImageTrainverV971(
                 ds_train,
-                num_classes=ds_train.get_number_of_classes(),
+                number_of_classes=ds_train.get_number_of_classes(),
                 model_name="resnet18",
                 loss_name="proxy_anchor_loss",
                 embedding_dim=128,
